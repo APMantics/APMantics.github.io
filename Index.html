@@ -5,56 +5,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ariral Species Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        form {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Ariral Species Report</h1>
+    <form id="loginForm">
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
 
-    <h2>Executive Summary</h2>
-    <p>This report provides an overview of the Ariral species, covering various aspects of their biology, culture, and interactions with other species.</p>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
 
-    <h2>Table of Contents</h2>
-    <ol>
-        <li><a href="#introduction">Introduction</a></li>
-        <li><a href="#biology">Biology</a></li>
-        <li><a href="#culture">Culture</a></li>
-        <li><a href="#technology">Technology</a></li>
-        <li><a href="#interactions-with-humans">Interactions with Humans</a></li>
-        <li><a href="#conclusion">Conclusion</a></li>
-    </ol>
+        <button type="button" onclick="checkLogin()">Login</button>
+    </form>
 
-    <h2 id="introduction">1. Introduction</h2>
-    <p>The Arirals are a unique extraterrestrial species with distinct characteristics, inhabiting a planet located between two orbiting stars. This report aims to shed light on key aspects of their existence.</p>
+    <div id="welcomeMessage" style="display: none;">
+        <h2>Welcome Dr. Price</h2>
+        <!-- Your report content goes here -->
+    </div>
 
-    <h2 id="biology">2. Biology</h2>
-    <h3>2.1 Reproduction</h3>
-    <p>Arirals are known for their asexual reproduction, a process that involves laying ostrich-sized eggs. However, the introduction of Germales has added a layer of complexity to their reproductive system, allowing for interactions with both male and female counterparts.</p>
-    
-    <h3>2.2 Anatomy</h3>
-    <p>Talls and Shorts represent two distinct castes with variations in height and physical characteristics. Talls typically exhibit...</p>
+    <script>
+        function checkLogin() {
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
 
-    <h2 id="culture">3. Culture</h2>
-    <h3>3.1 Society</h3>
-    <p>Ariral society is divided into Talls and Shorts, residing in different regions of their planet. The Talls live in a utopia, while Shorts experience a dystopian environment.</p>
-    
-    <h3>3.2 Leadership</h3>
-    <p>Argemia Armuntela, a red-haired and green-eyed Ariral, leads the Talls. Her leadership style and challenges are explored in detail within this report.</p>
-
-    <h2 id="technology">4. Technology</h2>
-    <p>Arirals have a fascination with transparent and colorful electronics. Warp Arrows, their advanced spaceships, play a crucial role in their interactions with other species.</p>
-
-    <h2 id="interactions-with-humans">5. Interactions with Humans</h2>
-    <p>Arirals have established communication with humans, and this section explores the dynamics of their relationship. The report touches on cultural differences, Arirals' views on human behavior, and potential collaboration initiatives.</p>
-
-    <h2 id="conclusion">6. Conclusion</h2>
-    <p>In conclusion, the Arirals present a captivating species with a rich tapestry of biology, culture, and technology. Further research and diplomatic efforts are recommended for a deeper understanding and collaboration.</p>
-
-    <hr>
-
-    <p><strong>Disclaimer:</strong> This report is a work of fiction and does not represent any real-world entities.</p>
+            if (username === 'AriralInformant' && password === 'ILoveArirals') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('welcomeMessage').style.display = 'block';
+            } else {
+                alert('Invalid credentials. Please try again.');
+            }
+        }
+    </script>
 
 </body>
 
 </html>
-
