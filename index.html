@@ -1,177 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<style>
-  :root {
-    --ace-purple: #800080;
-    --ace-gray: #a3a3a3;
-    --ace-black: #000000;
-    --ace-white: #ffffff;
-  }
+  <style>
+    :root {
+      --ace-purple: #800080;
+      --ace-gray: #a3a3a3;
+      --ace-black: #000000;
+      --ace-white: #ffffff;
+    }
 
-  body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, var(--ace-purple) 0%, var(--ace-black) 100%);
-    color: var(--ace-white);
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-  }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, var(--ace-purple) 0%, var(--ace-black) 100%);
+      color: var(--ace-white);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
 
-  .chat-container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  }
+    .chat-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
 
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-  .ace-flag {
-    display: flex;
-    height: 30px;
-    margin: 10px auto;
-    border-radius: 5px;
-    overflow: hidden;
-  }
+    .ace-flag {
+      display: flex;
+      height: 30px;
+      margin: 10px auto;
+      border-radius: 5px;
+      overflow: hidden;
+    }
 
-  .stripe {
-    flex: 1;
-    height: 100%;
-  }
+    .stripe {
+      flex: 1;
+      height: 100%;
+    }
 
-  .black { background-color: var(--ace-black); }
-  .gray { background-color: var(--ace-gray); }
-  .white { background-color: var(--ace-white); }
-  .purple { background-color: var(--ace-purple); }
+    .black { background-color: var(--ace-black); }
+    .gray { background-color: var(--ace-gray); }
+    .white { background-color: var(--ace-white); }
+    .purple { background-color: var(--ace-purple); }
 
-  #chat-messages {
-    height: 400px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-  }
+    #chat-messages {
+      height: 400px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
 
-  .message {
-    margin-bottom: 10px;
-    padding: 8px;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.1);
-  }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.1);
+    }
 
-  .message.system {
-    color: #ff4444;
-    font-style: italic;
-  }
+    .message.system {
+      color: #ff4444;
+      font-style: italic;
+    }
 
-  .message-input {
-    display: flex;
-    gap: 10px;
-  }
+    .message-input {
+      display: flex;
+      gap: 10px;
+    }
 
-  input[type="text"] {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--ace-white);
-  }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--ace-white);
+    }
 
-  button {
-    background: var(--ace-purple);
-    color: var(--ace-white);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
+    button {
+      background: var(--ace-purple);
+      color: var(--ace-white);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
 
-  button:hover {
-    background: #660066;
-  }
-</style>
+    button:hover {
+      background: #660066;
+    }
+  </style>
 </head>
 <body>
-<div class="chat-container">
-  <div class="header">
-    <h1>Ace Space Chat</h1>
-    <div class="ace-flag">
-      <div class="stripe black"></div>
-      <div class="stripe gray"></div>
-      <div class="stripe white"></div>
-      <div class="stripe purple"></div>
+  <div class="chat-container">
+    <div class="header">
+      <h1>Ace Space Chat</h1>
+      <div class="ace-flag">
+        <div class="stripe black"></div>
+        <div class="stripe gray"></div>
+        <div class="stripe white"></div>
+        <div class="stripe purple"></div>
+      </div>
+      <p>A safe space for ace discussion 💜</p>
     </div>
-    <p>A safe space for ace discussion 💜</p>
+
+    <div id="chat-messages"></div>
+
+    <div class="message-input">
+      <input type="text" id="message-input" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
-  
-  <div id="chat-messages"></div>
-  
-  <div class="message-input">
-    <input type="text" id="message-input" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
-  </div>
-</div>
 
-<script>
-const forbiddenTerms = [
-  'gay', 'lesbian', 'bi', 'pan', 'straight', 'heterosexual', 'homosexual',
-  'bisexual', 'pansexual', 'allosexual'
-];
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
 
-let username = '';
+  <script> //need to change apikey authDomain databaseURL project ID storageBucket messagingSenderId and appid
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: 'YOUR_API_KEY',
+      authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
+      databaseURL: 'https://YOUR_PROJECT_ID.firebaseio.com',
+      projectId: 'YOUR_PROJECT_ID',
+      storageBucket: 'YOUR_PROJECT_ID.appspot.com',
+      messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+      appId: 'YOUR_APP_ID'
+    };
 
-window.onload = () => {
-  username = prompt('Enter your username:') || 'Anonymous';
-  addMessage('System', `Welcome to Ace Space, ${username}! This is a safe space for ace discussion.`, 'system');
-};
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
 
-function addMessage(user, text, type = 'normal') {
-  const messagesDiv = document.getElementById('chat-messages');
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `message ${type}`;
-  messageDiv.textContent = `${user}: ${text}`;
-  messagesDiv.appendChild(messageDiv);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
+    const forbiddenTerms = [
+      'gay', 'lesbian', 'bi', 'pan', 'straight', 'heterosexual', 'homosexual',
+      'bisexual', 'pansexual', 'allosexual'
+    ];
 
-function containsForbiddenTerms(message) {
-  return forbiddenTerms.some(term => 
-    message.toLowerCase().includes(term.toLowerCase())
-  );
-}
+    let username = '';
 
-function sendMessage() {
-  const input = document.getElementById('message-input');
-  const message = input.value.trim();
-  
-  if (!message) return;
-  
-  if (containsForbiddenTerms(message)) {
-    addMessage('System', `${username} has been banned for breaking community guidelines.`, 'system');
-    input.disabled = true;
-    document.querySelector('button').disabled = true;
-    return;
-  }
-  
-  addMessage(username, message);
-  input.value = '';
-}
+    window.onload = () => {
+      username = prompt('Enter your username:') || 'Anonymous';
+      addMessage('System', `Welcome to Ace Space, ${username}! This is a safe space for ace discussion.`, 'system');
+    };
 
-// Allow sending with Enter ke
-document.getElementById('message-input').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    sendMessage();
-  }
-});
-</script>
+    function addMessage(user, text, type = 'normal') {
+      const messagesDiv = document.getElementById('chat-messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.textContent = `${user}: ${text}`;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function containsForbiddenTerms(message) {
+      return forbiddenTerms.some(term => 
+        message.toLowerCase().includes(term.toLowerCase())
+      );
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      if (containsForbiddenTerms(message)) {
+        addMessage('System', `${username} has been banned for breaking community guidelines.`, 'system');
+        input.disabled = true;
+        document.querySelector('button').disabled = true;
+        return;
+      }
+
+      // Add message to Firebase Realtime Database
+      const newMessageRef = db.ref('messages').push();
+      newMessageRef.set({
+        user: username,
+        text: message,
+        timestamp: Date.now()
+      });
+
+      input.value = '';
+    }
+
+    // Listen for new messages in the Firebase Realtime Database
+    db.ref('messages').on('child_added', snapshot => {
+      const messageData = snapshot.val();
+      addMessage(messageData.user, messageData.text);
+    });
+
+    // Allow sending with Enter key
+    document.getElementById('message-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
 </body>
 </html>
