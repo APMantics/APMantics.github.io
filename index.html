@@ -39,6 +39,15 @@ body {
   background: #1a1a1a;
   border-radius: 10px;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gamzee-face {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .stats {
@@ -144,7 +153,6 @@ button:hover {
 
 .shop-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(151, 69, 245, 0.3);
 }
 
 .shop-item.disabled {
@@ -199,35 +207,57 @@ button:hover {
   margin-top: 5px;
 }
 
-/* Add styles for adventure UI */
-.adventure-container {
+/* Add styles for game over screen */
+.game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
   display: none;
-  background: rgba(0,0,0,0.6);
-  padding: 20px;
-  border-radius: 5px;
-  margin-top: 20px;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.adventure-choices {
-  display: grid;
-  gap: 10px;
-  margin-top: 15px;
+.game-over-content {
+  background: var(--purple);
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 500px;
 }
 
-.choice-button {
-  background: #4a0080;
+.game-over-content img {
+  display: block;
+  margin: 0 auto 20px;
+  border-radius: 10px;
+}
+
+.game-over h2 {
+  color: #ff0000;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.game-over p {
+  margin-bottom: 30px;
+}
+
+.restart-button {
+  background: #6b21a8;
   color: #fff;
   border: none;
-  padding: 15px;
+  padding: 15px 30px;
   border-radius: 5px;
   cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: all 0.2s ease;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
 }
 
-.choice-button:hover {
-  background: #6b21a8;
+.restart-button:hover {
+  background: #7c3aed;
   transform: translateY(-2px);
 }
 </style>
@@ -235,15 +265,11 @@ button:hover {
 <body>
 <div id="game-container">
   <div class="character">
-    <svg id="gamzee-portrait" viewBox="0 0 100 100">
-      <path d="M50 20 Q60 20 70 25 Q80 30 80 40 Q80 50 70 60 Q60 70 50 70 Q40 70 30 60 Q20 50 20 40 Q20 30 30 25 Q40 20 50 20" fill="#666"/>
-      <path d="M35 35 Q40 35 40 40 Q40 45 35 45 Q30 45 30 40 Q30 35 35 35" fill="white"/>
-      <path d="M65 35 Q70 35 70 40 Q70 45 65 45 Q60 45 60 40 Q60 35 65 35" fill="white"/>
-      <path d="M40 50 Q50 60 60 50" fill="none" stroke="white" stroke-width="2"/>
-    </svg>
+    <div id="gamzee-portrait">
+      <img id="gamzee-face" src="https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png" alt="Gamzee's face with gray skin, messy black hair, and clown makeup consisting of white face paint and dark circles around yellow eyes" width="200" height="200">
+    </div>
     <div class="stats">
       <div>Name:</div><div>Gamzee Makara</div>
-      <div>Health:</div><div id="health">100/100</div>
       <div>Sober Meter:</div><div id="sober-meter">0%</div>
       <div>Faygo Count:</div><div id="faygo">3</div>
       <div>Sopor Pies:</div><div id="sopor-pies">2</div>
@@ -319,10 +345,17 @@ button:hover {
       </div>
     </div>
   </div>
+</div>
 
-  <div class="adventure-container" id="adventure-container">
-    <div id="adventure-text"></div>
-    <div class="adventure-choices" id="adventure-choices"></div>
+<div class="game-over" id="game-over">
+  <div class="game-over-content">
+    <img src="https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(9).png" 
+         alt="Gamzee's face with a maniacal expression, sharp teeth, and red eyes" 
+         width="200" 
+         height="200">
+    <h2>GAME OVER</h2>
+    <p id="game-over-text">HoNk... :o(</p>
+    <button class="restart-button" onclick="restartGame()">Play Again?</button>
   </div>
 </div>
 
@@ -330,7 +363,6 @@ button:hover {
 let soberMeter = 0;
 let faygoCount = 3;
 let soporPies = 2;
-let health = 100;
 let boonbucks = 100;
 let hunger = 100;
 let thirst = 100;
@@ -377,6 +409,7 @@ setInterval(() => {
     thirst = Math.max(0, thirst - decrease);
     sleepiness = Math.max(0, sleepiness - decrease);
     updateMeters();
+    checkGameOver();
   }
 }, 10000);
 
@@ -393,15 +426,21 @@ function decreaseMeters() {
     thirst = Math.max(0, thirst - 3);
     sleepiness = Math.max(0, sleepiness - 3);
     updateMeters();
+    checkGameOver();
   }
 }
 
 function honk() {
   const dialogueBox = document.getElementById('dialogue-box');
-  const portrait = document.getElementById('gamzee-portrait');
+  const portrait = document.getElementById('gamzee-face');
   
   portrait.classList.add('honk-animation');
-  setTimeout(() => portrait.classList.remove('honk-animation'), 500);
+  portrait.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(12).png";
+  
+  setTimeout(() => {
+    portrait.classList.remove('honk-animation');
+    portrait.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+  }, 3000);
   
   const honks = [
     "HoNk HoNk MoThErFuCkEr :o)",
@@ -418,10 +457,20 @@ function drinkFaygo() {
   if (faygoCount > 0) {
     faygoCount--;
     soberMeter = Math.max(0, soberMeter - 10);
-    thirst = Math.min(100, thirst + 20);
+    thirst = Math.max(0, thirst + 20);
     document.getElementById('faygo').textContent = faygoCount;
     document.getElementById('sober-meter').textContent = soberMeter + '%';
     document.getElementById('dialogue-box').textContent = "MmM... mOtHeRfUcKiNg MiRaClE jUiCe :o)";
+    
+    // Change to happy sprite
+    const gamzeeFace = document.getElementById('gamzee-face');
+    gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(8).png";
+    
+    // Change back after 3 seconds
+    setTimeout(() => {
+      gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+    }, 3000);
+    
     updateMeters();
   } else {
     document.getElementById('dialogue-box').textContent = "aW nO mOrE fAyGo BrO :(";
@@ -429,6 +478,15 @@ function drinkFaygo() {
 }
 
 function juggle() {
+  // Change to juggling sprite
+  const gamzeeFace = document.getElementById('gamzee-face');
+  gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(11).png";
+  
+  // Change back after 3 seconds
+  setTimeout(() => {
+    gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+  }, 3000);
+  
   soberMeter = Math.min(100, soberMeter + 5);
   document.getElementById('sober-meter').textContent = soberMeter + '%';
   // More boonbucks if upgraded
@@ -453,6 +511,16 @@ function eatPie() {
     document.getElementById('sober-meter').textContent = soberMeter + '%';
     document.getElementById('sopor-pies').textContent = soporPies;
     document.getElementById('dialogue-box').textContent = "MmMmM... sOpOr SlImE pIe :o)";
+    
+    // Change to happy sprite
+    const gamzeeFace = document.getElementById('gamzee-face');
+    gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(8).png";
+    
+    // Change back after 3 seconds
+    setTimeout(() => {
+      gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+    }, 3000);
+    
     updateMeters();
   } else {
     document.getElementById('dialogue-box').textContent = "AiN't GoT nO mOrE pIeS bRo :(";
@@ -462,7 +530,9 @@ function eatPie() {
 function sleep() {
   if (!isSleeping) {
     isSleeping = true;
-    document.getElementById('gamzee-portrait').classList.add('sleeping');
+    // Change to sleeping sprite
+    document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(7).png";
+    document.getElementById('gamzee-face').classList.add('sleeping');
     document.getElementById('dialogue-box').textContent = "zZzZzZ... HoNk... zZzZzZ...";
     
     const sleepInterval = setInterval(() => {
@@ -472,7 +542,9 @@ function sleep() {
       if (sleepiness >= 100) {
         clearInterval(sleepInterval);
         isSleeping = false;
-        document.getElementById('gamzee-portrait').classList.remove('sleeping');
+        // Change back to normal sprite
+        document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+        document.getElementById('gamzee-face').classList.remove('sleeping');
         document.getElementById('dialogue-box').textContent = "ThAt WaS sOmE wIcKeD sHuTeYe, BrO!";
       }
     }, 1000);
@@ -530,7 +602,7 @@ function buyUpgrade(upgrade) {
     // Apply upgrade effects
     switch(upgrade) {
       case 'juggling':
-        document.getElementById('dialogue-box').textContent = "ThEsE nEw JuGgLiNg MoVeS aRe WiCkEd! :o)";
+        document.getElementById('dialogue-box').textContent = "ThEsE nEw JuGgLiNg MoVeS aRe WiCkEd RiGhT nOw!";
         break;
       case 'metabolism':
         document.getElementById('dialogue-box').textContent = "FeElInG mOrE cHiLl ThAn EvEr BrO!";
@@ -597,169 +669,181 @@ function trollFriends() {
     `<strong>${randomTroll.name}:</strong> ${randomTroll.text}<br>` +
     `<strong>Gamzee:</strong> ${randomResponse}`;
 
+  // Change sprite when trolling
+  document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/image.png";
+    
+  // Change back after 3 seconds
+  setTimeout(() => {
+    document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+  }, 3000);
+
   decreaseMeters();
 }
 
-const adventures = {
-  start: {
-    text: "YoU dEcIdE tO gO oUt FoR sOmE wIcKeD aDvEnTuReS. wHeRe To BrO?",
-    choices: [
-      {
-        text: "HeAd To ThE bEaCh",
-        next: "beach"
-      },
-      {
-        text: "ExPlOrE tHe DaRk CaRnIvAl",
-        next: "carnival"
-      },
-      {
-        text: "ViSiT tHe HiVe CoMpLeX",
-        next: "hive"
-      }
-    ]
-  },
-  beach: {
-    text: "ThE bEaCh Is AlL uP aNd SpArKlInG wItH mIrAcLeS. yOu SpOt SoMeThInG iN tHe DiStAnCe.",
-    choices: [
-      {
-        text: "ChEcK oUt ThE sHiNy ThInG",
-        effects: {
-          boonbucks: 50,
-          health: -10,
-          text: "YoU fOuNd SoMe BoOnBuCkS bUt GoT pInChEd bY a CrAb! WoRtH iT!"
-        }
-      },
-      {
-        text: "ChIlL aNd WaTcH tHe WaVeS",
-        effects: {
-          sleepiness: 30,
-          soberMeter: -20,
-          text: "ThE wAvEs ArE lIkE a MoThErFuCkInG mIrAcLe, So ChIlL..."
-        }
-      }
-    ]
-  },
-  carnival: {
-    text: "ThE dArK cArNiVaL iS aLl Up AnD eMpTy. SpOoKy MiRaClEs!",
-    choices: [
-      {
-        text: "RiDe ThE fErRiS wHeEl",
-        effects: {
-          soberMeter: 20,
-          boonbucks: 30,
-          text: "WhOoOoAaA! ThE vIeW iS mOtHeRfUcKiNg AmAzInG!"
-        }
-      },
-      {
-        text: "PlAy SoMe CaRnIvAl GaMeS",
-        effects: {
-          boonbucks: -10,
-          faygoCount: 1,
-          text: "WoN a WiCkEd BoTtLe Of FaYgO! :o)"
-        }
-      }
-    ]
-  },
-  hive: {
-    text: "ThE hIvE cOmPlEx Is BuZzInG wItH aCtIvItY.",
-    choices: [
-      {
-        text: "ViSiT kArKaT",
-        effects: {
-          health: 10,
-          soberMeter: -10,
-          text: "KaRkAt ShOuTeD sOmE sEnSe InTo YoU. kInDa SoOtHiNg!"
-        }
-      },
-      {
-        text: "ChEcK oUt ThE cOmMuNaL aReA",
-        effects: {
-          boonbucks: 20,
-          soporPies: 1,
-          text: "FoUnD sOmE bOoNbUcKs AnD a SlImE pIe SoMeOnE lEfT bEhInD!"
-        }
-      }
-    ]
-  }
-};
-
-function startAdventure() {
-  const container = document.getElementById('adventure-container');
-  const dialogueBox = document.getElementById('dialogue-box');
-  container.style.display = 'block';
-  dialogueBox.style.display = 'none';
-  showScene('start');
-}
-
-function showScene(sceneId) {
-  const scene = adventures[sceneId];
-  const container = document.getElementById('adventure-text');
-  const choices = document.getElementById('adventure-choices');
-  
-  container.textContent = scene.text;
-  choices.innerHTML = '';
-  
-  scene.choices.forEach(choice => {
-    const button = document.createElement('button');
-    button.className = 'choice-button';
-    button.textContent = choice.text;
-    button.onclick = () => makeChoice(choice);
-    choices.appendChild(button);
-  });
-}
-
-function makeChoice(choice) {
-  if (choice.effects) {
-    // Apply effects
-    if (choice.effects.health) health = Math.max(0, Math.min(100, health + choice.effects.health));
-    if (choice.effects.boonbucks) boonbucks = Math.max(0, boonbucks + choice.effects.boonbucks);
-    if (choice.effects.soberMeter) soberMeter = Math.max(0, Math.min(100, soberMeter + choice.effects.soberMeter));
-    if (choice.effects.sleepiness) sleepiness = Math.max(0, Math.min(100, sleepiness + choice.effects.sleepiness));
-    if (choice.effects.faygoCount) {
-      faygoCount = Math.max(0, faygoCount + choice.effects.faygoCount);
-      document.getElementById('faygo').textContent = faygoCount;
-    }
-    if (choice.effects.soporPies) {
-      soporPies = Math.max(0, soporPies + choice.effects.soporPies);
-      document.getElementById('sopor-pies').textContent = soporPies;
-    }
-    
-    // Update displays
-    document.getElementById('health').textContent = health + '/100';
-    document.getElementById('boonbucks').textContent = boonbucks;
-    document.getElementById('sober-meter').textContent = soberMeter + '%';
-    updateMeters();
-    updateInventory();
-    
-    // End adventure and show results
-    endAdventure(choice.effects.text || "ThAt WaS wIcKeD!");
-  } else if (choice.next) {
-    showScene(choice.next);
-  }
-}
-
-function endAdventure(text) {
-  const container = document.getElementById('adventure-container');
-  const dialogueBox = document.getElementById('dialogue-box');
-  container.style.display = 'none';
-  dialogueBox.style.display = 'block';
-  dialogueBox.textContent = text;
-}
-
-// Replace the goOut() function with this:
 function goOut() {
-  startAdventure();
+  // Split outcomes into good and bad arrays
+  const goodOutcomes = [
+    {
+      text: "FoUnD a WiCkEd BoTtLe Of FaYgO!",
+      effects: {
+        faygoCount: 1,
+        good: true
+      }
+    },
+    {
+      text: "SoMe MoThErFuCkEr LeFt A sOpOr PiE lYiNg ArOuNd!",
+      effects: {
+        soporPies: 1,
+        good: true
+      }
+    },
+    {
+      text: "PeRfOrMeD sOmE wIcKeD jUgGlInG fOr A cRoWd!",
+      effects: {
+        boonbucks: 40,
+        soberMeter: 10,
+        good: true
+      }
+    }
+  ];
+
+  const badOutcomes = [
+    {
+      text: "GoT iNtO a FiGhT wItH sOmE bAd DrOnEs! OuCh!",
+      effects: {
+        boonbucks: -20,
+        bad: true
+      }
+    },
+    {
+      text: "TrIpPeD aNd DrOpPeD aLl My FaYgO! :o(",
+      effects: {
+        faygoCount: -1,
+        bad: true
+      }
+    },
+    {
+      text: "SoMe MoThErFuCkEr StOlE mY bOoNbUcKs!",
+      effects: {
+        boonbucks: -30,
+        bad: true
+      }
+    }
+  ];
+
+  // 50/50 chance between good and bad outcomes
+  const isGoodOutcome = Math.random() < 0.5;
+  const outcomePool = isGoodOutcome ? goodOutcomes : badOutcomes;
+  const outcome = outcomePool[Math.floor(Math.random() * outcomePool.length)];
+  
+  // Apply effects
+  if (outcome.effects.faygoCount) {
+    faygoCount = Math.max(0, faygoCount + outcome.effects.faygoCount);
+    document.getElementById('faygo').textContent = faygoCount;
+  }
+  if (outcome.effects.soporPies) {
+    soporPies = Math.max(0, soporPies + outcome.effects.soporPies);
+    document.getElementById('sopor-pies').textContent = soporPies;
+  }
+  if (outcome.effects.boonbucks) {
+    boonbucks = Math.max(0, boonbucks + outcome.effects.boonbucks);
+    document.getElementById('boonbucks').textContent = boonbucks;
+  }
+  if (outcome.effects.soberMeter) {
+    soberMeter = Math.min(100, soberMeter + outcome.effects.soberMeter);
+    document.getElementById('sober-meter').textContent = soberMeter + '%';
+  }
+
+  // Adjust meters based on outcome type
+  if (outcome.effects.bad) {
+    // Bad outcomes decrease meters slightly
+    hunger = Math.max(0, hunger - 5);
+    thirst = Math.max(0, thirst - 5);
+    sleepiness = Math.max(0, sleepiness - 5);
+    
+    // Change sprite for bad outcomes
+    document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(6).png";
+    
+    // Change back after 3 seconds
+    setTimeout(() => {
+      document.getElementById('gamzee-face').src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
+    }, 3000);
+  } else if (outcome.effects.good) {
+    // Good outcomes increase meters slightly
+    hunger = Math.min(100, hunger + 10);
+    thirst = Math.min(100, thirst + 10);
+    sleepiness = Math.min(100, sleepiness + 10);
+  }
+
+  // Update displays
+  document.getElementById('dialogue-box').textContent = outcome.text;
+  updateMeters();
+  updateInventory();
+}
+
+// Add checkGameOver function
+function checkGameOver() {
+  if (hunger <= 0 || thirst <= 0 || sleepiness <= 0 || soberMeter >= 100) {
+    // Show game over screen
+    const gameOver = document.getElementById('game-over');
+    gameOver.style.display = 'flex';
+    
+    // Set game over text based on what caused it
+    let gameOverText = '';
+    if (hunger <= 0) {
+      gameOverText = "ShOuLd HaVe EaTeN mOrE pIeS...";
+    } else if (thirst <= 0) {
+      gameOverText = "RaN oUt Of FaYgO... :o(";
+    } else if (sleepiness <= 0) {
+      gameOverText = "TaNFeD oUt bY ThE sLeEp...";
+    } else if (soberMeter >= 100) {
+      gameOverText = "HONK honk HONK honk HONK...";
+    }
+    
+    document.getElementById('game-over-text').textContent = gameOverText;
+    return true;
+  }
+  return false;
+}
+
+function restartGame() {
+  // Reset all stats
+  soberMeter = 0;
+  faygoCount = 3;
+  soporPies = 2;
+  boonbucks = 100;
+  hunger = 100;
+  thirst = 100;
+  sleepiness = 100;
+  isSleeping = false;
+  
+  // Reset upgrades
+  upgrades = {
+    juggling: false,
+    metabolism: false,
+    storage: false
+  };
+  
+  // Update all displays
+  document.getElementById('sober-meter').textContent = soberMeter + '%';
+  document.getElementById('faygo').textContent = faygoCount;
+  document.getElementById('boonbucks').textContent = boonbucks;
+  document.getElementById('sopor-pies').textContent = soporPies;
+  document.getElementById('game-over').style.display = 'none';
+  document.getElementById('dialogue-box').textContent = "WhAt'S uP mOtHeRfUcKeR? :o)";
+  document.body.style.backgroundColor = 'var(--indigo)';
+  
+  updateMeters();
+  updateInventory();
 }
 
 // Initialize event listeners and game state
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('health').textContent = health + '/100';
   document.getElementById('sober-meter').textContent = soberMeter + '%';
   document.getElementById('faygo').textContent = faygoCount;
   document.getElementById('boonbucks').textContent = boonbucks;
   document.getElementById('sopor-pies').textContent = soporPies;
   updateMeters();
-  updateInventory();
 });
 </script>
 </body></html>
