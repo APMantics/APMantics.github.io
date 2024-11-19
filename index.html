@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <base href="." />
-<title>Homestuck Gamzee RPG</title>
+/><title>Homestuck Gamzee RPG</title>
 <style>
 :root {
   --indigo: #2b0057;
@@ -496,7 +496,7 @@ function juggle() {
   
   if (soberMeter > 80) {
     document.getElementById('dialogue-box').textContent = "honk. HONK. honk. HONK.";
-    document.body.style.backgroundColor = '#500000';
+    // Removed the line that changed background color
   } else {
     document.getElementById('dialogue-box').textContent = "ChEcK oUt ThEsE wIcKeD mOvEs BrO";
   }
@@ -511,16 +511,16 @@ function eatPie() {
     document.getElementById('sober-meter').textContent = soberMeter + '%';
     document.getElementById('sopor-pies').textContent = soporPies;
     document.getElementById('dialogue-box').textContent = "MmMmM... sOpOr SlImE pIe :o)";
-    
+
     // Change to happy sprite
     const gamzeeFace = document.getElementById('gamzee-face');
     gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(8).png";
-    
+
     // Change back after 3 seconds
     setTimeout(() => {
       gamzeeFace.src = "https://raw.githubusercontent.com/APMantics/APMantics.github.io/main/download%20(5).png";
     }, 3000);
-    
+
     updateMeters();
   } else {
     document.getElementById('dialogue-box').textContent = "AiN't GoT nO mOrE pIeS bRo :(";
@@ -831,7 +831,7 @@ function restartGame() {
   document.getElementById('sopor-pies').textContent = soporPies;
   document.getElementById('game-over').style.display = 'none';
   document.getElementById('dialogue-box').textContent = "WhAt'S uP mOtHeRfUcKeR? :o)";
-  document.body.style.backgroundColor = 'var(--indigo)';
+  // Removed the line that reset background color
   
   updateMeters();
   updateInventory();
