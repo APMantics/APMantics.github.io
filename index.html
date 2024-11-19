@@ -1,209 +1,761 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <style>
-    :root {
-      --ace-purple: #800080;
-      --ace-gray: #a3a3a3;
-      --ace-black: #000000;
-      --ace-white: #ffffff;
-    }
+<html><head><base href="." /><title>Homestuck Gamzee RPG</title>
+<style>
+:root {
+  --indigo: #2b0057;
+  --purple: #440a67;
+}
 
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, var(--ace-purple) 0%, var(--ace-black) 100%);
-      color: var(--ace-white);
-      margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-    }
+body {
+  margin: 0;
+  padding: 20px;
+  background: var(--indigo);
+  color: #9745f5;
+  font-family: "Courier New", monospace;
+}
 
-    .chat-container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    }
+#game-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--purple);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(151, 69, 245, 0.3);
+}
 
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+.character {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
 
-    .ace-flag {
-      display: flex;
-      height: 30px;
-      margin: 10px auto;
-      border-radius: 5px;
-      overflow: hidden;
-    }
+#gamzee-portrait {
+  width: 200px;
+  height: 200px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  overflow: hidden;
+}
 
-    .stripe {
-      flex: 1;
-      height: 100%;
-    }
+.stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 5px;
+}
 
-    .black { background-color: var(--ace-black); }
-    .gray { background-color: var(--ace-gray); }
-    .white { background-color: var(--ace-white); }
-    .purple { background-color: var(--ace-purple); }
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
 
-    #chat-messages {
-      height: 400px;
-      overflow-y: auto;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-    }
+button {
+  background: #6b21a8;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
 
-    .message {
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.1);
-    }
+button:hover {
+  background: #7c3aed;
+  transform: translateY(-2px);
+}
 
-    .message.system {
-      color: #ff4444;
-      font-style: italic;
-    }
+#dialogue-box {
+  background: rgba(0,0,0,0.5);
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 20px;
+  min-height: 100px;
+  font-size: 1.1em;
+}
 
-    .message-input {
-      display: flex;
-      gap: 10px;
-    }
+.inventory {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
 
-    input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.2);
-      color: var(--ace-white);
-    }
+.inventory-slot {
+  background: rgba(0,0,0,0.3);
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  min-height: 60px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-    button {
-      background: var(--ace-purple);
-      color: var(--ace-white);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+.inventory-slot:hover {
+  background: rgba(0,0,0,0.5);
+  transform: translateY(-2px);
+}
 
-    button:hover {
-      background: #660066;
-    }
-  </style>
+.item-count {
+  font-size: 0.8em;
+  color: #9745f5;
+  margin-top: 5px;
+}
+
+@keyframes honk {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.honk-animation {
+  animation: honk 0.5s ease;
+}
+
+.shop-section {
+  margin-top: 20px;
+  background: rgba(0,0,0,0.3);
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.shop-items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.shop-item {
+  background: var(--purple);
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shop-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(151, 69, 245, 0.3);
+}
+
+.shop-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#boonbucks {
+  color: #00ff00;
+  font-weight: bold;
+}
+
+/* Add styles for new meters */
+.meters {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.meter-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: #9745f5;
+  transition: width 0.3s ease;
+}
+
+@keyframes sleep {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.sleeping {
+  animation: sleep 2s infinite;
+}
+
+.shop-item div:last-child {
+  font-size: 0.8em;
+  color: #9745f5;
+  opacity: 0.8;
+  margin-top: 5px;
+}
+
+/* Add styles for adventure UI */
+.adventure-container {
+  display: none;
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.adventure-choices {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.choice-button {
+  background: #4a0080;
+  color: #fff;
+  border: none;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.choice-button:hover {
+  background: #6b21a8;
+  transform: translateY(-2px);
+}
+</style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="header">
-      <h1>Ace Space Chat</h1>
-      <div class="ace-flag">
-        <div class="stripe black"></div>
-        <div class="stripe gray"></div>
-        <div class="stripe white"></div>
-        <div class="stripe purple"></div>
-      </div>
-      <p>A safe space for ace discussion 💜</p>
-    </div>
-
-    <div id="chat-messages"></div>
-
-    <div class="message-input">
-      <input type="text" id="message-input" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
+<div id="game-container">
+  <div class="character">
+    <svg id="gamzee-portrait" viewBox="0 0 100 100">
+      <path d="M50 20 Q60 20 70 25 Q80 30 80 40 Q80 50 70 60 Q60 70 50 70 Q40 70 30 60 Q20 50 20 40 Q20 30 30 25 Q40 20 50 20" fill="#666"/>
+      <path d="M35 35 Q40 35 40 40 Q40 45 35 45 Q30 45 30 40 Q30 35 35 35" fill="white"/>
+      <path d="M65 35 Q70 35 70 40 Q70 45 65 45 Q60 45 60 40 Q60 35 65 35" fill="white"/>
+      <path d="M40 50 Q50 60 60 50" fill="none" stroke="white" stroke-width="2"/>
+    </svg>
+    <div class="stats">
+      <div>Name:</div><div>Gamzee Makara</div>
+      <div>Health:</div><div id="health">100/100</div>
+      <div>Sober Meter:</div><div id="sober-meter">0%</div>
+      <div>Faygo Count:</div><div id="faygo">3</div>
+      <div>Sopor Pies:</div><div id="sopor-pies">2</div>
     </div>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+  <div class="action-buttons">
+    <button onclick="honk()">HONK</button>
+    <button onclick="drinkFaygo()">Drink Faygo</button>
+    <button onclick="juggle()">Juggle Clubs</button>
+    <button onclick="eatPie()">Eat Sopor Pie</button>
+    <button onclick="sleep()">Sleep</button>
+    <button onclick="trollFriends()">Troll Friends</button>
+    <button onclick="goOut()">Go Out</button>
+  </div>
 
-  <script> //need to change apikey authDomain databaseURL project ID storageBucket messagingSenderId and appid
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: 'YOUR_API_KEY',
-      authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-      databaseURL: 'https://YOUR_PROJECT_ID.firebaseio.com',
-      projectId: 'YOUR_PROJECT_ID',
-      storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-      messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-      appId: 'YOUR_APP_ID'
-    };
+  <div id="dialogue-box">
+    WhAt'S uP mOtHeRfUcKeR? :o)
+  </div>
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
+  <div class="meters">
+    <div>Hunger:</div>
+    <div class="meter-bar">
+      <div id="hunger-meter" class="meter-fill" style="width: 100%"></div>
+    </div>
+    <div>Thirst:</div>
+    <div class="meter-bar">
+      <div id="thirst-meter" class="meter-fill" style="width: 100%"></div>
+    </div>
+    <div>Sleep:</div>
+    <div class="meter-bar">
+      <div id="sleep-meter" class="meter-fill" style="width: 100%"></div>
+    </div>
+  </div>
 
-    const forbiddenTerms = [
-      'gay', 'lesbian', 'bi', 'pan', 'straight', 'heterosexual', 'homosexual',
-      'bisexual', 'pansexual', 'allosexual'
-    ];
+  <div class="inventory">
+  </div>
 
-    let username = '';
+  <div class="shop-section">
+    <h2>Shop</h2>
+    <div>Boonbucks: <span id="boonbucks">100</span></div>
+    <div class="shop-items">
+      <div class="shop-item" onclick="buyItem('faygo')">
+        <div>Faygo</div>
+        <div>10 boonbucks</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('pie')">
+        <div>Sopor Pie</div>
+        <div>30 boonbucks</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('horn')">
+        <div>Bike Horn</div>
+        <div>15 boonbucks</div>
+      </div>
+    </div>
 
-    window.onload = () => {
-      username = prompt('Enter your username:') || 'Anonymous';
-      addMessage('System', `Welcome to Ace Space, ${username}! This is a safe space for ace discussion.`, 'system');
-    };
+    <h2>Upgrades</h2>
+    <div class="shop-items">
+      <div class="shop-item" onclick="buyUpgrade('juggling')">
+        <div>Better Juggling Skills</div>
+        <div>50 boonbucks</div>
+        <div>Earn more while juggling</div>
+      </div>
+      <div class="shop-item" onclick="buyUpgrade('metabolism')">
+        <div>Improved Metabolism</div>
+        <div>75 boonbucks</div>
+        <div>Meters decrease slower</div>
+      </div>
+      <div class="shop-item" onclick="buyUpgrade('storage')">
+        <div>Bigger Sylladex</div>
+        <div>100 boonbucks</div>
+        <div>Carry more items</div>
+      </div>
+    </div>
+  </div>
 
-    function addMessage(user, text, type = 'normal') {
-      const messagesDiv = document.getElementById('chat-messages');
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${type}`;
-      messageDiv.textContent = `${user}: ${text}`;
-      messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+  <div class="adventure-container" id="adventure-container">
+    <div id="adventure-text"></div>
+    <div class="adventure-choices" id="adventure-choices"></div>
+  </div>
+</div>
 
-    function containsForbiddenTerms(message) {
-      return forbiddenTerms.some(term => 
-        message.toLowerCase().includes(term.toLowerCase())
-      );
-    }
+<script>
+let soberMeter = 0;
+let faygoCount = 3;
+let soporPies = 2;
+let health = 100;
+let boonbucks = 100;
+let hunger = 100;
+let thirst = 100;
+let sleepiness = 100;
+let isSleeping = false;
 
-    function sendMessage() {
-      const input = document.getElementById('message-input');
-      const message = input.value.trim();
+// Add upgrades variable
+let upgrades = {
+  juggling: false,
+  metabolism: false,
+  storage: false
+};
 
-      if (!message) return;
+// Update inventory display function
+function updateInventory() {
+  const slots = {
+    'faygo': {count: faygoCount, text: 'Faygo'},
+    'clubs': {count: 2, text: 'Juggling Clubs'}, 
+    'pies': {count: soporPies, text: 'Sopor Pies'},
+    'horn': {count: 1, text: 'Horn'}
+  };
 
-      if (containsForbiddenTerms(message)) {
-        addMessage('System', `${username} has been banned for breaking community guidelines.`, 'system');
-        input.disabled = true;
-        document.querySelector('button').disabled = true;
-        return;
+  const inventory = document.querySelector('.inventory');
+  inventory.innerHTML = '';
+  
+  for (let [item, data] of Object.entries(slots)) {
+    const slot = document.createElement('div');
+    slot.className = 'inventory-slot';
+    slot.onclick = () => useItem(item);
+    slot.innerHTML = `
+      <div>${data.text}</div>
+      <div class="item-count">x${data.count}</div>
+    `;
+    inventory.appendChild(slot);
+  }
+}
+
+// Decrease meters over time
+setInterval(() => {
+  if (!isSleeping) {
+    // Slower decrease if metabolism upgraded
+    let decrease = upgrades.metabolism ? 0.5 : 1;
+    hunger = Math.max(0, hunger - decrease);
+    thirst = Math.max(0, thirst - decrease);
+    sleepiness = Math.max(0, sleepiness - decrease);
+    updateMeters();
+  }
+}, 10000);
+
+function updateMeters() {
+  document.getElementById('hunger-meter').style.width = hunger + '%';
+  document.getElementById('thirst-meter').style.width = thirst + '%';
+  document.getElementById('sleep-meter').style.width = sleepiness + '%';
+}
+
+// Add this function definition before it's used
+function decreaseMeters() {
+  if (!isSleeping) {
+    hunger = Math.max(0, hunger - 3);
+    thirst = Math.max(0, thirst - 3);
+    sleepiness = Math.max(0, sleepiness - 3);
+    updateMeters();
+  }
+}
+
+function honk() {
+  const dialogueBox = document.getElementById('dialogue-box');
+  const portrait = document.getElementById('gamzee-portrait');
+  
+  portrait.classList.add('honk-animation');
+  setTimeout(() => portrait.classList.remove('honk-animation'), 500);
+  
+  const honks = [
+    "HoNk HoNk MoThErFuCkEr :o)",
+    "ThIs Is OnE wIcKeD eLiXiR, bRo",
+    "mIrAcLeS aLl Up In ThIs BiTcH",
+    "WhAt A mOtHeRfUcKiNg DaY",
+  ];
+  
+  dialogueBox.textContent = honks[Math.floor(Math.random() * honks.length)];
+  decreaseMeters();
+}
+
+function drinkFaygo() {
+  if (faygoCount > 0) {
+    faygoCount--;
+    soberMeter = Math.max(0, soberMeter - 10);
+    thirst = Math.min(100, thirst + 20);
+    document.getElementById('faygo').textContent = faygoCount;
+    document.getElementById('sober-meter').textContent = soberMeter + '%';
+    document.getElementById('dialogue-box').textContent = "MmM... mOtHeRfUcKiNg MiRaClE jUiCe :o)";
+    updateMeters();
+  } else {
+    document.getElementById('dialogue-box').textContent = "aW nO mOrE fAyGo BrO :(";
+  }
+}
+
+function juggle() {
+  soberMeter = Math.min(100, soberMeter + 5);
+  document.getElementById('sober-meter').textContent = soberMeter + '%';
+  // More boonbucks if upgraded
+  let earnings = upgrades.juggling ? 10 : 5;
+  boonbucks += earnings;
+  document.getElementById('boonbucks').textContent = boonbucks;
+  
+  if (soberMeter > 80) {
+    document.getElementById('dialogue-box').textContent = "honk. HONK. honk. HONK.";
+    document.body.style.backgroundColor = '#500000';
+  } else {
+    document.getElementById('dialogue-box').textContent = "ChEcK oUt ThEsE wIcKeD mOvEs BrO";
+  }
+  decreaseMeters();
+}
+
+function eatPie() {
+  if (soporPies > 0) {
+    soporPies--;
+    hunger = Math.min(100, hunger + 30);
+    soberMeter = Math.max(0, soberMeter - 20);
+    document.getElementById('sober-meter').textContent = soberMeter + '%';
+    document.getElementById('sopor-pies').textContent = soporPies;
+    document.getElementById('dialogue-box').textContent = "MmMmM... sOpOr SlImE pIe :o)";
+    updateMeters();
+  } else {
+    document.getElementById('dialogue-box').textContent = "AiN't GoT nO mOrE pIeS bRo :(";
+  }
+}
+
+function sleep() {
+  if (!isSleeping) {
+    isSleeping = true;
+    document.getElementById('gamzee-portrait').classList.add('sleeping');
+    document.getElementById('dialogue-box').textContent = "zZzZzZ... HoNk... zZzZzZ...";
+    
+    const sleepInterval = setInterval(() => {
+      sleepiness = Math.min(100, sleepiness + 5);
+      updateMeters();
+      
+      if (sleepiness >= 100) {
+        clearInterval(sleepInterval);
+        isSleeping = false;
+        document.getElementById('gamzee-portrait').classList.remove('sleeping');
+        document.getElementById('dialogue-box').textContent = "ThAt WaS sOmE wIcKeD sHuTeYe, BrO!";
       }
+    }, 1000);
+  }
+}
 
-      // Add message to Firebase Realtime Database
-      const newMessageRef = db.ref('messages').push();
-      newMessageRef.set({
-        user: username,
-        text: message,
-        timestamp: Date.now()
-      });
+function buyItem(item) {
+  const prices = {
+    faygo: 10,
+    pie: 30,
+    horn: 15
+  };
 
-      input.value = '';
+  if (boonbucks >= prices[item]) {
+    boonbucks -= prices[item];
+    document.getElementById('boonbucks').textContent = boonbucks;
+
+    switch(item) {
+      case 'faygo':
+        faygoCount++;
+        document.getElementById('faygo').textContent = faygoCount;
+        document.getElementById('dialogue-box').textContent = "AwW yEaH, mOrE mIrAcLe JuIcE! :o)";
+        break;
+      case 'pie':
+        soporPies++;
+        document.getElementById('sopor-pies').textContent = soporPies;
+        document.getElementById('dialogue-box').textContent = "SlAmMiNg ThIs WiCkEd ElIxIr! :o)";
+        break;
+      case 'horn':
+        honk();
+        break;
     }
+  } else {
+    document.getElementById('dialogue-box').textContent = "AiN't GoT eNoUgH bOoNbUcKs, BrO :(";
+  }
+}
 
-    // Listen for new messages in the Firebase Realtime Database
-    db.ref('messages').on('child_added', snapshot => {
-      const messageData = snapshot.val();
-      addMessage(messageData.user, messageData.text);
-    });
+function buyUpgrade(upgrade) {
+  const prices = {
+    juggling: 50,
+    metabolism: 75,
+    storage: 100
+  };
 
-    // Allow sending with Enter key
-    document.getElementById('message-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendMessage();
+  if (upgrades[upgrade]) {
+    document.getElementById('dialogue-box').textContent = "AlReAdY gOt ThAt UpGrAdE bRo!";
+    return;
+  }
+
+  if (boonbucks >= prices[upgrade]) {
+    boonbucks -= prices[upgrade];
+    upgrades[upgrade] = true;
+    document.getElementById('boonbucks').textContent = boonbucks;
+
+    // Apply upgrade effects
+    switch(upgrade) {
+      case 'juggling':
+        document.getElementById('dialogue-box').textContent = "ThEsE nEw JuGgLiNg MoVeS aRe WiCkEd! :o)";
+        break;
+      case 'metabolism':
+        document.getElementById('dialogue-box').textContent = "FeElInG mOrE cHiLl ThAn EvEr BrO!";
+        break;
+      case 'storage':
+        document.getElementById('dialogue-box').textContent = "So MuCh SpAcE fOr AcTiViTiEs!";
+        // Add new inventory slots
+        const inventory = document.querySelector('.inventory');
+        for (let i = 0; i < 4; i++) {
+          const slot = document.createElement('div');
+          slot.className = 'inventory-slot';
+          inventory.appendChild(slot);
+        }
+        break;
+    }
+  } else {
+    document.getElementById('dialogue-box').textContent = "AiN't GoT eNoUgH bOoNbUcKs FoR tHaT uPgRaDe, BrO :(";
+  }
+}
+
+function useItem(item) {
+  switch(item) {
+    case 'faygo':
+      if (faygoCount > 0) drinkFaygo();
+      break;
+    case 'clubs':
+      document.getElementById('dialogue-box').textContent = "ThEsE cLuBs ArE eXtRa WiCkEd RiGhT nOw!";
+      juggle();
+      juggle();
+      break;
+    case 'pies':
+      if (soporPies > 0) eatPie();
+      break;
+    case 'horn':
+      document.getElementById('dialogue-box').textContent = "HONK honk HONK honk!";
+      honk();
+      break;
+  }
+  updateInventory();
+}
+
+function trollFriends() {
+  const trolls = [
+    {name: "Karkat", text: "WHAT THE FUCK DO YOU WANT NOW YOU CLOWN?"},
+    {name: "Tavros", text: "uHH,,, hEY GAMZEE,,, wHAT'S UP?"},
+    {name: "Terezi", text: "H3Y CLOWNBOY! WH4T'S TH4T D3L1C1OUS PURPL3 SM3LL? >:]"},
+    {name: "Kanaya", text: "Hello Gamzee. I Hope You Are Being Responsible With Those Pies."},
+    {name: "Vriska", text: "Oh gr8, it's the clown again. Wh8t do you want????????"},
+    {name: "Nepeta", text: ":33 < *ac purrks up at the sight of her clown furiend*"}
+  ];
+
+  const gamzeeResponses = [
+    "HeY mOtHeRfUcKeR, jUsT cHiLlInG wItH mY mIrAcLeS :o)",
+    "YoU wAnNa TrY sOmE oF tHiS wIcKeD eLiXiR?",
+    "HoNk HoNk, JuSt SpReAdInG tHe MiRtH bRo",
+    "MaN, tHe MiRaClEs ArE eXtRa StRoNg ToDaY",
+    "WaNnA hEaR aBoUt ThE dArK cArNiVaL?"
+  ];
+
+  const randomTroll = trolls[Math.floor(Math.random() * trolls.length)];
+  const randomResponse = gamzeeResponses[Math.floor(Math.random() * gamzeeResponses.length)];
+
+  document.getElementById('dialogue-box').innerHTML = 
+    `<strong>${randomTroll.name}:</strong> ${randomTroll.text}<br>` +
+    `<strong>Gamzee:</strong> ${randomResponse}`;
+
+  decreaseMeters();
+}
+
+const adventures = {
+  start: {
+    text: "YoU dEcIdE tO gO oUt FoR sOmE wIcKeD aDvEnTuReS. wHeRe To BrO?",
+    choices: [
+      {
+        text: "HeAd To ThE bEaCh",
+        next: "beach"
+      },
+      {
+        text: "ExPlOrE tHe DaRk CaRnIvAl",
+        next: "carnival"
+      },
+      {
+        text: "ViSiT tHe HiVe CoMpLeX",
+        next: "hive"
       }
-    });
-  </script>
-</body>
-</html>
+    ]
+  },
+  beach: {
+    text: "ThE bEaCh Is AlL uP aNd SpArKlInG wItH mIrAcLeS. yOu SpOt SoMeThInG iN tHe DiStAnCe.",
+    choices: [
+      {
+        text: "ChEcK oUt ThE sHiNy ThInG",
+        effects: {
+          boonbucks: 50,
+          health: -10,
+          text: "YoU fOuNd SoMe BoOnBuCkS bUt GoT pInChEd bY a CrAb! WoRtH iT!"
+        }
+      },
+      {
+        text: "ChIlL aNd WaTcH tHe WaVeS",
+        effects: {
+          sleepiness: 30,
+          soberMeter: -20,
+          text: "ThE wAvEs ArE lIkE a MoThErFuCkInG mIrAcLe, So ChIlL..."
+        }
+      }
+    ]
+  },
+  carnival: {
+    text: "ThE dArK cArNiVaL iS aLl Up AnD eMpTy. SpOoKy MiRaClEs!",
+    choices: [
+      {
+        text: "RiDe ThE fErRiS wHeEl",
+        effects: {
+          soberMeter: 20,
+          boonbucks: 30,
+          text: "WhOoOoAaA! ThE vIeW iS mOtHeRfUcKiNg AmAzInG!"
+        }
+      },
+      {
+        text: "PlAy SoMe CaRnIvAl GaMeS",
+        effects: {
+          boonbucks: -10,
+          faygoCount: 1,
+          text: "WoN a WiCkEd BoTtLe Of FaYgO! :o)"
+        }
+      }
+    ]
+  },
+  hive: {
+    text: "ThE hIvE cOmPlEx Is BuZzInG wItH aCtIvItY.",
+    choices: [
+      {
+        text: "ViSiT kArKaT",
+        effects: {
+          health: 10,
+          soberMeter: -10,
+          text: "KaRkAt ShOuTeD sOmE sEnSe InTo YoU. kInDa SoOtHiNg!"
+        }
+      },
+      {
+        text: "ChEcK oUt ThE cOmMuNaL aReA",
+        effects: {
+          boonbucks: 20,
+          soporPies: 1,
+          text: "FoUnD sOmE bOoNbUcKs AnD a SlImE pIe SoMeOnE lEfT bEhInD!"
+        }
+      }
+    ]
+  }
+};
+
+function startAdventure() {
+  const container = document.getElementById('adventure-container');
+  const dialogueBox = document.getElementById('dialogue-box');
+  container.style.display = 'block';
+  dialogueBox.style.display = 'none';
+  showScene('start');
+}
+
+function showScene(sceneId) {
+  const scene = adventures[sceneId];
+  const container = document.getElementById('adventure-text');
+  const choices = document.getElementById('adventure-choices');
+  
+  container.textContent = scene.text;
+  choices.innerHTML = '';
+  
+  scene.choices.forEach(choice => {
+    const button = document.createElement('button');
+    button.className = 'choice-button';
+    button.textContent = choice.text;
+    button.onclick = () => makeChoice(choice);
+    choices.appendChild(button);
+  });
+}
+
+function makeChoice(choice) {
+  if (choice.effects) {
+    // Apply effects
+    if (choice.effects.health) health = Math.max(0, Math.min(100, health + choice.effects.health));
+    if (choice.effects.boonbucks) boonbucks = Math.max(0, boonbucks + choice.effects.boonbucks);
+    if (choice.effects.soberMeter) soberMeter = Math.max(0, Math.min(100, soberMeter + choice.effects.soberMeter));
+    if (choice.effects.sleepiness) sleepiness = Math.max(0, Math.min(100, sleepiness + choice.effects.sleepiness));
+    if (choice.effects.faygoCount) {
+      faygoCount = Math.max(0, faygoCount + choice.effects.faygoCount);
+      document.getElementById('faygo').textContent = faygoCount;
+    }
+    if (choice.effects.soporPies) {
+      soporPies = Math.max(0, soporPies + choice.effects.soporPies);
+      document.getElementById('sopor-pies').textContent = soporPies;
+    }
+    
+    // Update displays
+    document.getElementById('health').textContent = health + '/100';
+    document.getElementById('boonbucks').textContent = boonbucks;
+    document.getElementById('sober-meter').textContent = soberMeter + '%';
+    updateMeters();
+    updateInventory();
+    
+    // End adventure and show results
+    endAdventure(choice.effects.text || "ThAt WaS wIcKeD!");
+  } else if (choice.next) {
+    showScene(choice.next);
+  }
+}
+
+function endAdventure(text) {
+  const container = document.getElementById('adventure-container');
+  const dialogueBox = document.getElementById('dialogue-box');
+  container.style.display = 'none';
+  dialogueBox.style.display = 'block';
+  dialogueBox.textContent = text;
+}
+
+// Replace the goOut() function with this:
+function goOut() {
+  startAdventure();
+}
+
+// Initialize event listeners and game state
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('health').textContent = health + '/100';
+  document.getElementById('sober-meter').textContent = soberMeter + '%';
+  document.getElementById('faygo').textContent = faygoCount;
+  document.getElementById('boonbucks').textContent = boonbucks;
+  document.getElementById('sopor-pies').textContent = soporPies;
+  updateMeters();
+  updateInventory();
+});
+</script>
+</body></html>
