@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APmantics's Home</title>
+    <title>Typewriter Effect</title>
     <style>
-        /* Centering the text in the middle of the page */
+        /* Centering the content */
         body, html {
             height: 100%;
             margin: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-family: Courier, monospace;
             background-color: #f0f0f0;
         }
 
-        /* Style for the typewriter effect */
+        /* Style for the typewriter text */
         .typewriter {
             font-size: 24px;
             white-space: nowrap;
@@ -26,7 +27,7 @@
             animation: blink 0.7s step-end infinite; /* Blinking cursor animation */
         }
 
-        /* Animation for the cursor blink after typing finishes */
+        /* Blinking cursor animation */
         @keyframes blink {
             0% { border-right-color: black; }
             50% { border-right-color: transparent; }
@@ -42,9 +43,12 @@
             background-color: #fff;
             font-size: 18px;
             cursor: pointer;
+            text-decoration: none;
+            color: #333;
             transition: background-color 0.3s ease, transform 0.2s;
         }
 
+        /* Button hover effect */
         .game-sim-button:hover {
             background-color: #333;
             color: #fff;
@@ -58,7 +62,7 @@
     <div id="typewriter" class="typewriter"></div>
 
     <!-- Game Sim Button -->
-    <button class="game-sim-button" onclick="alert('Game Sim Started!')">Game Sim</button>
+    <a href="gamesim.html" class="game-sim-button">Game Sim</a>
 
     <script>
         function typewriterEffect(elementId, text, speed) {
