@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="." />
+<title>Flappy Reagan</title><style>
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #87CEEB, #4169E1);
+    font-family: 'Arial', sans-serif;
+}
+
+#gameCanvas {
+    border: 3px solid #333;
+    background: linear-gradient(to bottom, #87CEEB, #4169E1);
+}
+
+.game-container {
+    position: relative;
+}
+
+#score {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: white;
+    text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+}
+</style></head><body>
+<div class="game-container">
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+
+// Game states
+const GameState = {
+    START: 'start',
+    PLAYING: 'playing',
+    GAMEOVER: 'gameover'
+};
+let gameState = GameState.START;
+
+// Reagan bird properties with adjusted physics
+const bird = {
+    x: 50,
+    y: canvas.height / 2,
+    width: 40,
+    height: 40,
+    velocity: 0,
+    gravity: 0.2,  // Reduced from 0.5 to make falling slower
+    jumpForce: -4  // Reduced from -10 to make flapping weaker
+};
+
+// Pipe properties
+const pipeWidth = 60;
+const pipeGap = 150;
+let pipes = [];
+let score = 0;
+
+// Create Reagan image
+const reaganImg = new Image();
+reaganImg.src = 'https://i.ibb.co/p3vKvLT/image.png';
+
+function createPipe() {
+    const gapY = Math.random() * (canvas.height - pipeGap - 100) + 50;
+    pipes.push({
+        x: canvas.width,
+        topHeight: gapY,
+        bottomY: gapY + pipeGap,
+        passed: false
+    });
+}
+
+function drawStartScreen() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = '40px Arial';
+    ctx.fillText('Reagan Bird', canvas.width/2 - 100, canvas.height/2 - 40);
+    
+    ctx.font = '20px Arial';
+    ctx.fillText('Click or Press Space to Start', canvas.width/2 - 100, canvas.height/2 + 20);
+    
+    // Draw Reagan preview
+    ctx.drawImage(reaganImg, canvas.width/2 - 20, canvas.height/2 - 120, bird.width, bird.height);
+}
+
+function draw() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Reagan bird
+    ctx.drawImage(reaganImg, bird.x, bird.y, bird.width, bird.height);
+
+    // Draw pipes
+    ctx.fillStyle = '#228B22';
+    pipes.forEach(pipe => {
+        // Top pipe
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+        // Bottom pipe
+        ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+    });
+
+    // Update score
+    scoreElement.textContent = `Score: ${score}`;
+}
+
+function update() {
+    if (gameState === GameState.START) {
+        drawStartScreen();
+        requestAnimationFrame(update);
+        return;
+    }
+
+    if (gameState === GameState.GAMEOVER) {
+        draw(); // Draw the final frame
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.fillText('Game Over!', canvas.width/2 - 80, canvas.height/2);
+        ctx.fillText(`Score: ${score}`, canvas.width/2 - 60, canvas.height/2 + 40);
+        ctx.font = '20px Arial';
+        ctx.fillText('Click to restart', canvas.width/2 - 60, canvas.height/2 + 80);
+        requestAnimationFrame(update);
+        return;
+    }
+
+    // Update bird position
+    bird.velocity += bird.gravity;
+    bird.y += bird.velocity;
+
+    // Create new pipes
+    if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+        createPipe();
+    }
+
+    // Update pipes
+    pipes.forEach(pipe => {
+        pipe.x -= 2;
+
+        // Check for scoring
+        if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
+            score++;
+            pipe.passed = true;
+        }
+
+        // Check for collisions
+        if (
+            bird.x + bird.width > pipe.x &&
+            bird.x < pipe.x + pipeWidth &&
+            (bird.y < pipe.topHeight || bird.y + bird.height > pipe.bottomY)
+        ) {
+            gameState = GameState.GAMEOVER;
+        }
+    });
+
+    // Remove off-screen pipes
+    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+
+    // Check boundaries
+    if (bird.y > canvas.height - bird.height || bird.y < 0) {
+        gameState = GameState.GAMEOVER;
+    }
+
+    draw();
+
+    requestAnimationFrame(update);
+}
+
+function jump() {
+    if (gameState === GameState.START) {
+        gameState = GameState.PLAYING;
+    } else if (gameState === GameState.GAMEOVER) {
+        // Reset game
+        bird.y = canvas.height / 2;
+        bird.velocity = 0;
+        pipes = [];
+        score = 0;
+        gameState = GameState.PLAYING;
+    }
+    
+    if (gameState === GameState.PLAYING) {
+        bird.velocity = bird.jumpForce;
+    }
+}
+
+// Event listeners
+canvas.addEventListener('click', jump);
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') jump();
+});
+
+// Start the game
+update();
+</script>
+</body></html>
