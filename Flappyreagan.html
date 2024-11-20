@@ -50,15 +50,15 @@ const GameState = {
 };
 let gameState = GameState.START;
 
-// Reagan bird properties with adjusted physics
+// Reagan bird properties
 const bird = {
     x: 50,
     y: canvas.height / 2,
     width: 40,
     height: 40,
     velocity: 0,
-    gravity: 0.2,  // Reduced from 0.5 to make falling slower
-    jumpForce: -4  // Reduced from -10 to make flapping weaker
+    gravity: 0.5,
+    jumpForce: -10
 };
 
 // Pipe properties
@@ -87,13 +87,17 @@ function drawStartScreen() {
     
     ctx.fillStyle = 'white';
     ctx.font = '40px Arial';
-    ctx.fillText('Flappy Reagan', canvas.width/2 - 100, canvas.height/2 - 40);
+    ctx.textAlign = 'center';
+    ctx.fillText('Flappy Reagan', canvas.width/2, canvas.height/2 - 40);
     
     ctx.font = '20px Arial';
-    ctx.fillText('Click or Press Space to Start', canvas.width/2 - 100, canvas.height/2 + 20);
+    ctx.fillText('Click or Press Space to Start', canvas.width/2, canvas.height/2 + 20);
     
     // Draw Reagan preview
     ctx.drawImage(reaganImg, canvas.width/2 - 20, canvas.height/2 - 120, bird.width, bird.height);
+    
+    // Reset text alignment for other text
+    ctx.textAlign = 'left';
 }
 
 function draw() {
@@ -129,10 +133,12 @@ function update() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'white';
         ctx.font = '30px Arial';
-        ctx.fillText('Game Over!', canvas.width/2 - 80, canvas.height/2);
-        ctx.fillText(`Score: ${score}`, canvas.width/2 - 60, canvas.height/2 + 40);
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over!', canvas.width/2, canvas.height/2);
+        ctx.fillText(`Score: ${score}`, canvas.width/2, canvas.height/2 + 40);
         ctx.font = '20px Arial';
-        ctx.fillText('Click to restart', canvas.width/2 - 60, canvas.height/2 + 80);
+        ctx.fillText('Click to restart', canvas.width/2, canvas.height/2 + 80);
+        ctx.textAlign = 'left';
         requestAnimationFrame(update);
         return;
     }
