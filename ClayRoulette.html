@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="https://i.ibb.co/njQDVw3/image.png">
+<base href="." />
+<title>Clay Roulette</title><style>
+body {
+    background: #2b1810;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: #e6d5cc;
+}
+
+.scene {
+    position: relative;
+    width: 600px;
+    height: 300px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.clay-person {
+    width: 100px;
+    height: 140px;
+    position: relative;
+}
+
+.player { transform: scaleX(1); }
+.bot { transform: scaleX(-1); }
+
+.head {
+    width: 40px;
+    height: 40px;
+    background: #c4a495;
+    border-radius: 50%;
+    position: relative;
+    margin: 0 auto;
+}
+
+.body {
+    width: 30px;
+    height: 40px;
+    background: #c4a495;
+    margin: 5px auto;
+    border-radius: 8px;
+}
+
+.splat {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #c4a495;
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 0;
+    transition: all 0.3s ease;
+    top: 10px;
+    left: 20px;
+}
+
+.chamber-display {
+    width: 120px;
+    height: 120px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 1s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.chamber {
+    width: 20px;
+    height: 20px;
+    background: #666;
+    border-radius: 50%;
+    position: absolute;
+    transition: background-color 0.3s ease;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #8b4513;
+    color: #e6d5cc;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: #a0522d;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.message {
+    font-size: 24px;
+    margin: 20px;
+    text-align: center;
+    min-height: 2em;
+}
+
+.turn-indicator {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #ffd700;
+}
+
+.menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.menu h1 {
+    color: #e6d5cc;
+    font-size: 48px;
+    margin-bottom: 40px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.game-container {
+    display: none;
+}
+
+.story-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    text-align: center;
+}
+
+.story-text {
+    font-size: 24px;
+    max-width: 800px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+    color: #e6d5cc;
+}
+
+.level-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    color: #ffd700;
+}
+
+.blue-person .head,
+.blue-person .body,
+.blue-person .splat {
+    background: #6495ED !important;
+}
+
+.red-person .head,
+.red-person .body,
+.red-person .splat {
+    background: #CD5C5C !important;
+}
+</style>
+</head>
+<body>
+<div id="menu" class="menu">
+    <h1>Clay Roulette</h1>
+    <div class="menu-buttons">
+        <button id="easyMode">Easy Mode</button>
+        <button id="hardMode">Hard Mode</button>
+        <button id="storyMode">Story Mode</button>
+    </div>
+</div>
+
+<div id="storyContainer" class="story-container">
+    <div id="storyText" class="story-text"></div>
+    <button id="continueStory">Continue</button>
+</div>
+
+<div id="levelDisplay" class="level-display"></div>
+
+<div id="gameContainer" class="game-container">
+    <div class="turn-indicator" id="turnIndicator">Your Turn</div>
+    <div class="message" id="message">Choose your action!</div>
+    <div class="scene" id="scene">
+        <div class="clay-person player" id="player">
+            <div class="head"></div>
+            <div class="body"></div>
+            <div class="splat"></div>
+        </div>
+        <div class="chamber-display" id="chamberDisplay"></div>
+        <div class="clay-person bot" id="bot">
+            <div class="head"></div>
+            <div class="body"></div>
+            <div class="splat"></div>
+        </div>
+    </div>
+    <div class="controls" id="controls">
+        <button id="shootSelf">Shoot Self</button>
+        <button id="spinChamber">Spin Chamber</button>
+        <button id="shootOpponent">Shoot Opponent</button>
+    </div>
+</div>
+
+<script>
+const continueStoryBtn = document.getElementById('continueStory');
+let currentLevel = 0;
+let isStoryMode = false;
+let isPlayerTurn = true;
+let gameActive = true;
+let bulletPosition = Math.floor(Math.random() * 6);
+let currentPosition = 0;
+let isHardMode = false;
+let spinsRemaining = 1;
+let botSpinsRemaining = 1;
+const storyContainer = document.getElementById('storyContainer');
+const menu = document.getElementById('menu');
+const gameContainer = document.getElementById('gameContainer');
+const controls = document.getElementById('controls');
+const turnIndicator = document.getElementById('turnIndicator');
+const message = document.getElementById('message');
+const chamberDisplay = document.getElementById('chamberDisplay');
+
+const storyLevels = [
+    {
+        intro: "In a world of clay, the peaceful blue clay people lived harmoniously until the day the red clay army arrived. You've been captured and forced to participate in their twisted game of survival. Win to progress through their ranks and save your people.",
+        difficulty: 0.2
+    },
+    {
+        intro: "Level 2: The first victory has given you hope. Your captor seems impressed, but the games have only begun.",
+        difficulty: 0.3
+    },
+    {
+        intro: "Level 3: Word of your survival spreads through the red clay ranks. They're beginning to take you more seriously.",
+        difficulty: 0.4
+    },
+    {
+        intro: "Level 4: The red clay commanders are getting nervous. They're sending their more experienced players.",
+        difficulty: 0.5
+    },
+    {
+        intro: "Level 5: Halfway through their ranks. The red clay elite are starting to fear your progress.",
+        difficulty: 0.6
+    },
+    {
+        intro: "Level 6: The games are becoming more intense. Your opponents are among the most skilled players.",
+        difficulty: 0.7
+    },
+    {
+        intro: "Level 7: Only the top red clay warriors remain. They won't go down easily.",
+        difficulty: 0.8
+    },
+    {
+        intro: "Level 8: You're facing the red clay general's personal guard now. Victory is within reach.",
+        difficulty: 0.85
+    },
+    {
+        intro: "Level 9: The red clay commander's second-in-command stands before you. One more victory until you face the leader.",
+        difficulty: 0.9
+    },
+    {
+        intro: "Final Level: The red clay supreme commander himself has come to face you. Win this, and your people will be freed.",
+        difficulty: 0.95
+    }
+];
+
+function showStoryText(text) {
+    storyContainer.style.display = 'flex';
+    storyText.textContent = text;
+}
+
+function updateLevelDisplay() {
+    if (isStoryMode) {
+        levelDisplay.textContent = `Level ${currentLevel + 1}/10`;
+        levelDisplay.style.display = 'block';
+    } else {
+        levelDisplay.style.display = 'none';
+    }
+}
+
+function startStoryLevel() {
+    if (currentLevel >= storyLevels.length) {
+        showEndingChoice();
+        return;
+    }
+
+    // Reset game state for new level
+    gameActive = true;
+    isPlayerTurn = true;
+    bulletPosition = Math.floor(Math.random() * 6);
+    currentPosition = 0;
+    
+    // Reset spin counts for new level
+    spinsRemaining = 1;
+    document.getElementById('spinChamber').disabled = false;
+    
+    if (currentLevel < 3) {
+        botSpinsRemaining = 1;
+    } else if (currentLevel < 6) {
+        botSpinsRemaining = 2;
+    } else if (currentLevel < 8) {
+        botSpinsRemaining = 3;
+    } else {
+        botSpinsRemaining = 6;
+    }
+
+    showStoryText(storyLevels[currentLevel].intro);
+    updateLevelDisplay();
+}
+
+function showEndingChoice() {
+    storyContainer.style.display = 'flex';
+    storyText.textContent = "The red clay leader falls to their knees. 'Please... spare me! I'll give you anything you want. Join us, and together we can rule over both our peoples!'";
+    
+    // Replace continue button with choice buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '20px';
+    
+    const killButton = document.createElement('button');
+    killButton.textContent = "Execute the Leader";
+    killButton.onclick = showGoodEnding;
+    
+    const spareButton = document.createElement('button');
+    spareButton.textContent = "Spare and Join Them";
+    spareButton.onclick = showBadEnding;
+    
+    buttonContainer.appendChild(killButton);
+    buttonContainer.appendChild(spareButton);
+    
+    // Replace continue button with choices
+    continueStoryBtn.replaceWith(buttonContainer);
+}
+
+function showGoodEnding() {
+    storyText.textContent = "With a final shot, you end the red clay leader's reign of terror. Your people are freed, and peace returns to the land of clay. You are hailed as a hero, and your story becomes legend. The end.";
+    resetEndingButtons();
+}
+
+function showBadEnding() {
+    storyText.textContent = "You accept the leader's offer, betraying your own people. The blue clay people remain enslaved, and you become feared as the cruelest enforcer of the red clay army. Your name becomes synonymous with treachery. The end.";
+    resetEndingButtons();
+}
+
+function resetEndingButtons() {
+    // Restore continue button for returning to menu
+    const buttonContainer = document.querySelector('.story-container div:last-child');
+    buttonContainer.replaceWith(continueStoryBtn);
+    continueStoryBtn.textContent = "Return to Menu";
+}
+
+function createChambers() {
+    chamberDisplay.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+        const chamber = document.createElement('div');
+        chamber.className = 'chamber';
+        const angle = (i * 60) * (Math.PI / 180);
+        const radius = 40;
+        chamber.style.left = `${50 + radius * Math.cos(angle)}%`;
+        chamber.style.top = `${50 + radius * Math.sin(angle)}%`;
+        chamberDisplay.appendChild(chamber);
+    }
+}
+
+function updateChambers(position, isHit) {
+    const chambers = document.querySelectorAll('.chamber');
+    chambers[position].style.backgroundColor = isHit ? '#ff0000' : '#00ff00';
+}
+
+function resetChambers() {
+    const chambers = document.querySelectorAll('.chamber');
+    chambers.forEach(chamber => chamber.style.backgroundColor = '#666');
+}
+
+function updateTurnIndicator() {
+    turnIndicator.textContent = isPlayerTurn ? "Your Turn" : "Bot's Turn";
+    controls.style.display = isPlayerTurn ? 'flex' : 'none';
+}
+
+function spinGun() {
+    return new Promise(resolve => {
+        chamberDisplay.style.transition = 'transform 1s cubic-bezier(0.4, 0.0, 0.2, 1)';
+        chamberDisplay.style.transform = 'translate(-50%, -50%) rotate(1080deg)';
+        setTimeout(() => {
+            chamberDisplay.style.transition = 'none';
+            chamberDisplay.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            currentPosition = Math.floor(Math.random() * 6);
+            // Randomize bullet position when spinning
+            bulletPosition = Math.floor(Math.random() * 6);
+            resetChambers();
+            resolve();
+        }, 1000);
+    });
+}
+
+function splat(element) {
+    const head = element.querySelector('.head');
+    const body = element.querySelector('.body');
+    const splat = element.querySelector('.splat');
+    
+    head.style.display = 'none';
+    body.style.display = 'none';
+    splat.style.transform = 'scale(1.5)';
+    splat.style.opacity = '1';
+}
+
+function resetGame() {
+    if (isStoryMode) {
+        if (message.textContent.includes("You win")) {
+            currentLevel++;
+            startStoryLevel();
+        } else {
+            // Reset to level 1 on death
+            currentLevel = 0;
+            showStoryText("Game Over! Starting over from Level 1...");
+            startStoryLevel();
+        }
+    }
+    menu.style.display = isStoryMode ? 'none' : 'flex';
+    gameContainer.style.display = 'none';
+    const players = document.querySelectorAll('.clay-person');
+    players.forEach(player => {
+        player.querySelector('.head').style.display = '';
+        player.querySelector('.body').style.display = '';
+        player.querySelector('.splat').style.transform = 'scale(0)';
+        player.querySelector('.splat').style.opacity = '0';
+    });
+    resetChambers();
+    isPlayerTurn = true;
+    gameActive = true;
+    bulletPosition = Math.floor(Math.random() * 6);
+    currentPosition = 0;
+    updateTurnIndicator();
+}
+
+async function shoot(isSelf) {
+    const hit = currentPosition === bulletPosition;
+    updateChambers(currentPosition, hit);
+    
+    if (hit) {
+        if (isSelf) {
+            splat(isPlayerTurn ? document.getElementById('player') : document.getElementById('bot'));
+            message.textContent = isPlayerTurn ? "You shot yourself! Game Over!" : "Bot shot itself! You win!";
+        } else {
+            splat(isPlayerTurn ? document.getElementById('bot') : document.getElementById('player'));
+            message.textContent = isPlayerTurn ? "You shot the bot! You win!" : "Bot shot you! Game Over!";
+        }
+        gameActive = false;
+        controls.style.display = 'none';
+        setTimeout(resetGame, 2000);
+        return true;
+    }
+    message.textContent = "Click! Empty chamber.";
+    currentPosition = (currentPosition + 1) % 6;
+    return false;
+}
+
+async function botTurn() {
+    if (!gameActive) return;
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    let action;
+    const difficulty = isStoryMode ? storyLevels[currentLevel].difficulty : (isHardMode ? 0.7 : 0.4);
+    
+    // Smarter bot logic based on level
+    if (isStoryMode) {
+        if (currentLevel >= 8) { // Final bosses
+            // Check if current position is deadly
+            if (currentPosition === bulletPosition && botSpinsRemaining > 0) {
+                action = 'spin';
+            } else if (Math.random() < 0.8) { // 80% chance to make optimal choice
+                action = 'shoot';
+            } else {
+                action = 'spin';
+            }
+        } else if (currentLevel >= 5) { // Smarter bots
+            if (Math.random() < difficulty) {
+                action = 'shoot';
+            } else if (botSpinsRemaining > 0) {
+                action = 'spin';
+            } else {
+                action = 'shoot';
+            }
+        } else { // Early level bots
+            action = Math.random() < difficulty ? 'shoot' : 'spin';
+        }
+    } else {
+        action = Math.random() < difficulty ? 'shoot' : 'spin';
+    }
+    
+    if (action === 'spin' && botSpinsRemaining > 0) {
+        message.textContent = "Bot is spinning the chamber...";
+        await spinGun();
+        botSpinsRemaining--;
+        message.textContent = `Bot spun the chamber! (${botSpinsRemaining} spins remaining)`;
+    } else {
+        const shootSelf = Math.random() < (0.3 - (currentLevel * 0.02)); // Less likely to shoot self at higher levels
+        message.textContent = shootSelf ? "Bot shoots itself!" : "Bot shoots at you!";
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const hit = await shoot(shootSelf);
+        if (!hit && gameActive) {
+            isPlayerTurn = true;
+            updateTurnIndicator();
+        }
+    }
+    
+    if (gameActive) {
+        message.textContent = "Your turn! Choose your action.";
+        isPlayerTurn = true;
+        updateTurnIndicator();
+    }
+}
+
+function startStoryMode() {
+    isStoryMode = true;
+    currentLevel = 0;
+    menu.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    
+    // Set the player and bot colors for story mode
+    const player = document.getElementById('player');
+    const bot = document.getElementById('bot');
+    player.classList.add('blue-person');
+    bot.classList.add('red-person');
+    
+    createChambers();
+    updateTurnIndicator();
+    startStoryLevel();
+}
+
+continueStoryBtn.addEventListener('click', () => {
+    if (continueStoryBtn.textContent === "Return to Menu") {
+        // Reset everything for a new game
+        isStoryMode = false;
+        currentLevel = 0;
+        storyContainer.style.display = 'none';
+        menu.style.display = 'flex';
+        gameContainer.style.display = 'none';
+        
+        // Remove color classes
+        document.getElementById('player').classList.remove('blue-person');
+        document.getElementById('bot').classList.remove('red-person');
+        
+        // Reset continue button text
+        continueStoryBtn.textContent = "Continue";
+    } else {
+        storyContainer.style.display = 'none';
+        gameContainer.style.display = 'flex';
+        updateTurnIndicator();
+    }
+});
+
+document.getElementById('easyMode').addEventListener('click', () => {
+    isHardMode = false;
+    menu.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    createChambers();
+    updateTurnIndicator();
+});
+
+document.getElementById('hardMode').addEventListener('click', () => {
+    isHardMode = true;
+    menu.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    createChambers();
+    updateTurnIndicator();
+});
+
+document.getElementById('storyMode').addEventListener('click', startStoryMode);
+
+document.getElementById('shootSelf').addEventListener('click', async () => {
+    if (!gameActive || !isPlayerTurn) return;
+    const hit = await shoot(true);
+    if (!hit && gameActive) {
+        isPlayerTurn = false;
+        updateTurnIndicator();
+        botTurn();
+    }
+});
+
+document.getElementById('spinChamber').addEventListener('click', async () => {
+    if (!gameActive || !isPlayerTurn || spinsRemaining <= 0) return;
+    await spinGun();
+    spinsRemaining--;
+    message.textContent = `Chamber spun! (${spinsRemaining} spins remaining)`;
+    document.getElementById('spinChamber').disabled = spinsRemaining <= 0;
+    isPlayerTurn = false;
+    updateTurnIndicator();
+    botTurn();
+});
+
+document.getElementById('shootOpponent').addEventListener('click', async () => {
+    if (!gameActive || !isPlayerTurn) return;
+    const hit = await shoot(false);
+    if (!hit && gameActive) {
+        isPlayerTurn = false;
+        updateTurnIndicator();
+        botTurn();
+    }
+});
+
+createChambers();
+updateTurnIndicator();
+</script>
+</body></html>
