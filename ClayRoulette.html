@@ -436,6 +436,7 @@ const controls = document.getElementById('controls');
 const turnIndicator = document.getElementById('turnIndicator');
 const message = document.getElementById('message');
 const chamberDisplay = document.getElementById('chamberDisplay');
+const levelDisplay = document.getElementById('levelDisplay');
 
 const storyLevels = [
     {
@@ -660,6 +661,9 @@ function showGameOverMenu() {
         // Remove color classes
         document.getElementById('player').classList.remove('blue-person');
         document.getElementById('bot').classList.remove('red-person');
+        
+        // Hide level display when returning to menu
+        levelDisplay.style.display = 'none';
     };
     
     buttonContainer.appendChild(restartButton);
@@ -682,7 +686,6 @@ function resetGame() {
         spinsRemaining = 1;
         document.getElementById('spinChamber').disabled = false;
         
-        // Give bot a new random color
         const botColor = getRandomColor();
         const bot = document.getElementById('bot');
         bot.querySelector('.head').style.backgroundColor = botColor;
@@ -691,6 +694,9 @@ function resetGame() {
         
         // Show version container again when returning to menu
         document.querySelector('.version-container').style.display = 'flex';
+        
+        // Hide level display when not in story mode
+        levelDisplay.style.display = 'none';
     }
     menu.style.display = isStoryMode ? 'none' : 'flex';
     gameContainer.style.display = 'none';
@@ -816,20 +822,17 @@ function getRandomColor() {
 
 function setupColorPicker() {
     colorOptions.innerHTML = '';
-    
-    // Set default white color for preview
-    selectedColor = colors.White;
-    colorPreview.querySelector('.head').style.backgroundColor = colors.White;
-    colorPreview.querySelector('.body').style.backgroundColor = colors.White;
-    colorPreview.querySelector('.splat').style.backgroundColor = colors.White;
-    
     Object.entries(colors).forEach(([name, color]) => {
         const option = document.createElement('div');
         option.className = 'color-option';
         option.style.backgroundColor = color;
-        // Add selected class to white option by default
+        // Set white as default selected color
         if (name === 'White') {
             option.classList.add('selected');
+            selectedColor = color;
+            colorPreview.querySelector('.head').style.backgroundColor = color;
+            colorPreview.querySelector('.body').style.backgroundColor = color;
+            colorPreview.querySelector('.splat').style.backgroundColor = color;
         }
         option.onclick = () => {
             document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
@@ -858,6 +861,9 @@ continueStoryBtn.addEventListener('click', () => {
         
         // Reset continue button text
         continueStoryBtn.textContent = "Continue";
+        
+        // Hide level display when returning to menu
+        levelDisplay.style.display = 'none';
     } else {
         storyContainer.style.display = 'none';
         gameContainer.style.display = 'flex';
