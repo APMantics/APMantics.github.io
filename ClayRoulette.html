@@ -245,6 +245,78 @@ button:disabled {
     font-size: 20px;
     color: #e6d5cc;
 }
+
+.version-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 1000; /* Add this to keep it on top */
+}
+
+.version-text {
+    color: #e6d5cc;
+    font-size: 14px;
+}
+
+.new-indicator {
+    color: #ffd700;
+    font-family: "Comic Sans MS", cursive;
+    font-size: 16px;
+    animation: bounce 0.5s infinite alternate;
+}
+
+.changelog-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001; /* Higher than other elements */
+}
+
+.changelog-content {
+    background: #2b1810;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #e6d5cc;
+}
+
+.changelog-content h2 {
+    color: #ffd700;
+    margin-bottom: 20px;
+}
+
+.close-changelog {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #e6d5cc;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-3px);
+    }
+}
 </style>
 </head>
 <body>
@@ -300,6 +372,24 @@ button:disabled {
         <button id="shootSelf">Shoot Self</button>
         <button id="spinChamber">Spin Chamber</button>
         <button id="shootOpponent">Shoot Opponent</button>
+    </div>
+</div>
+
+<div class="version-container">
+    <span class="version-text">V2.0</span>
+    <div class="new-indicator">New!</div>
+    <button id="changelogBtn">Changelog</button>
+</div>
+
+<div class="changelog-container" id="changelogModal">
+    <div class="changelog-content">
+        <button class="close-changelog" id="closeChangelog">×</button>
+        <h2>Changelog</h2>
+        <h3>Version 1.0</h3>
+        <ul>
+            <li>Added character customization</li>
+            <li>Added Changelog</li
+        </ul>
     </div>
 </div>
 
@@ -580,11 +670,9 @@ function resetGame() {
             currentLevel++;
             startStoryLevel();
         } else {
-            // Show game over menu instead of automatically restarting
             showGameOverMenu();
         }
     } else {
-        // Reset spins for non-story mode
         spinsRemaining = 1;
         document.getElementById('spinChamber').disabled = false;
         
@@ -595,9 +683,11 @@ function resetGame() {
         bot.querySelector('.body').style.backgroundColor = botColor;
         bot.querySelector('.splat').style.backgroundColor = botColor;
         
-        menu.style.display = 'flex';
-        gameContainer.style.display = 'none';
+        // Show version container again when returning to menu
+        document.querySelector('.version-container').style.display = 'flex';
     }
+    menu.style.display = isStoryMode ? 'none' : 'flex';
+    gameContainer.style.display = 'none';
     
     const players = document.querySelectorAll('.clay-person');
     players.forEach(player => {
@@ -699,6 +789,9 @@ function startStoryMode() {
     menu.style.display = 'none';
     gameContainer.style.display = 'flex';
     
+    // Hide version container
+    document.querySelector('.version-container').style.display = 'none';
+    
     // Set the player and bot colors for story mode
     const player = document.getElementById('player');
     const bot = document.getElementById('bot');
@@ -717,10 +810,21 @@ function getRandomColor() {
 
 function setupColorPicker() {
     colorOptions.innerHTML = '';
+    
+    // Set default white color for preview
+    selectedColor = colors.White;
+    colorPreview.querySelector('.head').style.backgroundColor = colors.White;
+    colorPreview.querySelector('.body').style.backgroundColor = colors.White;
+    colorPreview.querySelector('.splat').style.backgroundColor = colors.White;
+    
     Object.entries(colors).forEach(([name, color]) => {
         const option = document.createElement('div');
         option.className = 'color-option';
         option.style.backgroundColor = color;
+        // Add selected class to white option by default
+        if (name === 'White') {
+            option.classList.add('selected');
+        }
         option.onclick = () => {
             document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
             option.classList.add('selected');
@@ -759,6 +863,8 @@ document.getElementById('easyMode').addEventListener('click', () => {
     isHardMode = false;
     menu.style.display = 'none';
     customizationContainer.style.display = 'flex';
+    // Hide version container
+    document.querySelector('.version-container').style.display = 'none';
     setupColorPicker();
 });
 
@@ -766,6 +872,8 @@ document.getElementById('hardMode').addEventListener('click', () => {
     isHardMode = true;
     menu.style.display = 'none';
     customizationContainer.style.display = 'flex';
+    // Hide version container
+    document.querySelector('.version-container').style.display = 'none';
     setupColorPicker();
 });
 
@@ -799,150 +907,11 @@ confirmColorBtn.addEventListener('click', () => {
     updateTurnIndicator();
 });
 
-// Modify the resetGame function to reset bot color in non-story mode
-function resetGame() {
-    if (isStoryMode) {
-        if (message.textContent.includes("You win")) {
-            currentLevel++;
-            startStoryLevel();
-        } else {
-            // Show game over menu instead of automatically restarting
-            showGameOverMenu();
-        }
-    } else {
-        // Reset spins for non-story mode
-        spinsRemaining = 1;
-        document.getElementById('spinChamber').disabled = false;
-        
-        // Give bot a new random color
-        const botColor = getRandomColor();
-        const bot = document.getElementById('bot');
-        bot.querySelector('.head').style.backgroundColor = botColor;
-        bot.querySelector('.body').style.backgroundColor = botColor;
-        bot.querySelector('.splat').style.backgroundColor = botColor;
-    }
-    menu.style.display = isStoryMode ? 'none' : 'flex';
-    gameContainer.style.display = 'none';
-    const players = document.querySelectorAll('.clay-person');
-    players.forEach(player => {
-        player.querySelector('.head').style.display = '';
-        player.querySelector('.body').style.display = '';
-        player.querySelector('.splat').style.transform = 'scale(0)';
-        player.querySelector('.splat').style.opacity = '0';
-    });
-    resetChambers();
-    isPlayerTurn = true;
-    gameActive = true;
-    bulletPosition = Math.floor(Math.random() * 6);
-    currentPosition = 0;
-    updateTurnIndicator();
-}
-
-async function shoot(isSelf) {
-    const hit = currentPosition === bulletPosition;
-    updateChambers(currentPosition, hit);
-    
-    if (hit) {
-        if (isSelf) {
-            splat(isPlayerTurn ? document.getElementById('player') : document.getElementById('bot'));
-            message.textContent = isPlayerTurn ? "You shot yourself! Game Over!" : "Bot shot itself! You win!";
-        } else {
-            splat(isPlayerTurn ? document.getElementById('bot') : document.getElementById('player'));
-            message.textContent = isPlayerTurn ? "You shot the bot! You win!" : "Bot shot you! Game Over!";
-        }
-        gameActive = false;
-        controls.style.display = 'none';
-        setTimeout(resetGame, 2000);
-        return true;
-    }
-    message.textContent = "Click! Empty chamber.";
-    currentPosition = (currentPosition + 1) % 6;
-    return false;
-}
-
-async function botTurn() {
-    if (!gameActive) return;
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    let action;
-    const difficulty = isStoryMode ? storyLevels[currentLevel].difficulty : (isHardMode ? 0.7 : 0.4);
-    
-    // Smarter bot logic based on level
-    if (isStoryMode) {
-        if (currentLevel >= 8) { // Final bosses
-            // Check if current position is deadly
-            if (currentPosition === bulletPosition && botSpinsRemaining > 0) {
-                action = 'spin';
-            } else if (Math.random() < 0.8) { // 80% chance to make optimal choice
-                action = 'shoot';
-            } else {
-                action = 'spin';
-            }
-        } else if (currentLevel >= 5) { // Smarter bots
-            if (Math.random() < difficulty) {
-                action = 'shoot';
-            } else if (botSpinsRemaining > 0) {
-                action = 'spin';
-            } else {
-                action = 'shoot';
-            }
-        } else { // Early level bots
-            action = Math.random() < difficulty ? 'shoot' : 'spin';
-        }
-    } else {
-        action = Math.random() < difficulty ? 'shoot' : 'spin';
-    }
-    
-    if (action === 'spin' && botSpinsRemaining > 0) {
-        message.textContent = "Bot is spinning the chamber...";
-        await spinGun();
-        botSpinsRemaining--;
-        message.textContent = `Bot spun the chamber! (${botSpinsRemaining} spins remaining)`;
-    } else {
-        const shootSelf = Math.random() < (0.3 - (currentLevel * 0.02)); // Less likely to shoot self at higher levels
-        message.textContent = shootSelf ? "Bot shoots itself!" : "Bot shoots at you!";
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const hit = await shoot(shootSelf);
-        if (!hit && gameActive) {
-            isPlayerTurn = true;
-            updateTurnIndicator();
-        }
-    }
-    
-    if (gameActive) {
-        message.textContent = "Your turn! Choose your action.";
-        isPlayerTurn = true;
-        updateTurnIndicator();
-    }
-}
-
-function startStoryMode() {
-    isStoryMode = true;
-    currentLevel = 0;
-    menu.style.display = 'none';
-    gameContainer.style.display = 'flex';
-    
-    // Set the player and bot colors for story mode
-    const player = document.getElementById('player');
-    const bot = document.getElementById('bot');
-    player.classList.add('blue-person');
-    bot.classList.add('red-person');
-    
-    createChambers();
-    updateTurnIndicator();
-    startStoryLevel();
-}
-
-createChambers();
-updateTurnIndicator();
-
-document.getElementById('storyMode').addEventListener('click', startStoryMode);
-
+// Add event listeners for shooting and spinning actions
 document.getElementById('shootSelf').addEventListener('click', async () => {
     if (!isPlayerTurn || !gameActive) return;
-    await shoot(true);
-    if (gameActive) {
+    const hit = await shoot(true);
+    if (!hit && gameActive) {
         isPlayerTurn = false;
         updateTurnIndicator();
         botTurn();
@@ -951,8 +920,8 @@ document.getElementById('shootSelf').addEventListener('click', async () => {
 
 document.getElementById('shootOpponent').addEventListener('click', async () => {
     if (!isPlayerTurn || !gameActive) return;
-    await shoot(false);
-    if (gameActive) {
+    const hit = await shoot(false);
+    if (!hit && gameActive) {
         isPlayerTurn = false;
         updateTurnIndicator();
         botTurn();
@@ -961,13 +930,41 @@ document.getElementById('shootOpponent').addEventListener('click', async () => {
 
 document.getElementById('spinChamber').addEventListener('click', async () => {
     if (!isPlayerTurn || !gameActive || spinsRemaining <= 0) return;
-    await spinGun();
+    
     spinsRemaining--;
-    document.getElementById('spinChamber').disabled = spinsRemaining <= 0;
-    message.textContent = `Chamber spun! (${spinsRemaining} spins remaining)`;
-    isPlayerTurn = false;
-    updateTurnIndicator();
-    botTurn();
+    if (spinsRemaining <= 0) {
+        document.getElementById('spinChamber').disabled = true;
+    }
+    
+    message.textContent = `Spinning the chamber! (${spinsRemaining} spins remaining)`;
+    await spinGun();
+    if (gameActive) {
+        isPlayerTurn = false;
+        updateTurnIndicator();
+        botTurn();
+    }
+});
+
+document.getElementById('storyMode').addEventListener('click', startStoryMode);
+
+// Changelog functionality
+const changelogBtn = document.getElementById('changelogBtn');
+const changelogModal = document.getElementById('changelogModal');
+const closeChangelog = document.getElementById('closeChangelog');
+
+changelogBtn.addEventListener('click', () => {
+    changelogModal.style.display = 'flex';
+});
+
+closeChangelog.addEventListener('click', () => {
+    changelogModal.style.display = 'none';
+});
+
+// Close changelog when clicking outside the content
+changelogModal.addEventListener('click', (e) => {
+    if (e.target === changelogModal) {
+        changelogModal.style.display = 'none';
+    }
 });
 </script>
 </body></html>
