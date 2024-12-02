@@ -195,6 +195,56 @@ button:disabled {
 .red-person .splat {
     background: #CD5C5C !important;
 }
+
+.color-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin: 20px;
+}
+
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    border: 2px solid #ffd700;
+}
+
+.customization-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.preview-container {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.preview-label {
+    font-size: 20px;
+    color: #e6d5cc;
+}
 </style>
 </head>
 <body>
@@ -205,6 +255,22 @@ button:disabled {
         <button id="hardMode">Hard Mode</button>
         <button id="storyMode">Story Mode</button>
     </div>
+</div>
+
+<div id="customizationContainer" class="customization-container">
+    <h2 style="color: #e6d5cc;">Choose Your Character Color</h2>
+    <div class="preview-container">
+        <div class="preview-label">Preview:</div>
+        <div class="clay-person" id="colorPreview">
+            <div class="head"></div>
+            <div class="body"></div>
+            <div class="splat"></div>
+        </div>
+    </div>
+    <div class="color-picker">
+        <div class="color-options" id="colorOptions"></div>
+    </div>
+    <button id="confirmColor">Confirm</button>
 </div>
 
 <div id="storyContainer" class="story-container">
@@ -238,6 +304,25 @@ button:disabled {
 </div>
 
 <script>
+const colors = {
+    White: '#FFFFFF',
+    Blue: '#6495ED',
+    Red: '#CD5C5C',
+    Green: '#90EE90',
+    Yellow: '#FFD700',
+    Orange: '#FFA500',
+    Pink: '#FFB6C1',
+    Purple: '#DDA0DD',
+    Gray: '#A9A9A9',
+    Black: '#404040'
+};
+
+let selectedColor = null;
+const customizationContainer = document.getElementById('customizationContainer');
+const colorOptions = document.getElementById('colorOptions');
+const colorPreview = document.getElementById('colorPreview');
+const confirmColorBtn = document.getElementById('confirmColor');
+
 const continueStoryBtn = document.getElementById('continueStory');
 let currentLevel = 0;
 let isStoryMode = false;
@@ -439,17 +524,302 @@ function splat(element) {
     splat.style.opacity = '1';
 }
 
+function showGameOverMenu() {
+    storyContainer.style.display = 'flex';
+    storyText.textContent = "Game Over!";
+    
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '20px';
+    buttonContainer.id = 'gameOverButtons'; // Add an ID for easy removal
+    
+    // Create restart button
+    const restartButton = document.createElement('button');
+    restartButton.textContent = "Restart from Beginning";
+    restartButton.onclick = () => {
+        currentLevel = 0;
+        storyContainer.style.display = 'none';
+        // Remove the button container
+        document.getElementById('gameOverButtons').remove();
+        // Restore the continue button
+        storyContainer.appendChild(continueStoryBtn);
+        startStoryLevel();
+    };
+    
+    // Create return to menu button
+    const menuButton = document.createElement('button');
+    menuButton.textContent = "Return to Main Menu";
+    menuButton.onclick = () => {
+        isStoryMode = false;
+        currentLevel = 0;
+        storyContainer.style.display = 'none';
+        menu.style.display = 'flex';
+        gameContainer.style.display = 'none';
+        // Remove the button container
+        document.getElementById('gameOverButtons').remove();
+        // Restore the continue button
+        storyContainer.appendChild(continueStoryBtn);
+        
+        // Remove color classes
+        document.getElementById('player').classList.remove('blue-person');
+        document.getElementById('bot').classList.remove('red-person');
+    };
+    
+    buttonContainer.appendChild(restartButton);
+    buttonContainer.appendChild(menuButton);
+    
+    // Replace continue button with choice buttons
+    continueStoryBtn.remove(); // Remove instead of replace
+    storyContainer.appendChild(buttonContainer);
+}
+
 function resetGame() {
     if (isStoryMode) {
         if (message.textContent.includes("You win")) {
             currentLevel++;
             startStoryLevel();
         } else {
-            // Reset to level 1 on death
-            currentLevel = 0;
-            showStoryText("Game Over! Starting over from Level 1...");
-            startStoryLevel();
+            // Show game over menu instead of automatically restarting
+            showGameOverMenu();
         }
+    } else {
+        // Reset spins for non-story mode
+        spinsRemaining = 1;
+        document.getElementById('spinChamber').disabled = false;
+        
+        // Give bot a new random color
+        const botColor = getRandomColor();
+        const bot = document.getElementById('bot');
+        bot.querySelector('.head').style.backgroundColor = botColor;
+        bot.querySelector('.body').style.backgroundColor = botColor;
+        bot.querySelector('.splat').style.backgroundColor = botColor;
+        
+        menu.style.display = 'flex';
+        gameContainer.style.display = 'none';
+    }
+    
+    const players = document.querySelectorAll('.clay-person');
+    players.forEach(player => {
+        player.querySelector('.head').style.display = '';
+        player.querySelector('.body').style.display = '';
+        player.querySelector('.splat').style.transform = 'scale(0)';
+        player.querySelector('.splat').style.opacity = '0';
+    });
+    resetChambers();
+    isPlayerTurn = true;
+    gameActive = true;
+    bulletPosition = Math.floor(Math.random() * 6);
+    currentPosition = 0;
+    updateTurnIndicator();
+}
+
+async function shoot(isSelf) {
+    const hit = currentPosition === bulletPosition;
+    updateChambers(currentPosition, hit);
+    
+    if (hit) {
+        if (isSelf) {
+            splat(isPlayerTurn ? document.getElementById('player') : document.getElementById('bot'));
+            message.textContent = isPlayerTurn ? "You shot yourself! Game Over!" : "Bot shot itself! You win!";
+        } else {
+            splat(isPlayerTurn ? document.getElementById('bot') : document.getElementById('player'));
+            message.textContent = isPlayerTurn ? "You shot the bot! You win!" : "Bot shot you! Game Over!";
+        }
+        gameActive = false;
+        controls.style.display = 'none';
+        setTimeout(resetGame, 2000);
+        return true;
+    }
+    message.textContent = "Click! Empty chamber.";
+    currentPosition = (currentPosition + 1) % 6;
+    return false;
+}
+
+async function botTurn() {
+    if (!gameActive) return;
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    let action;
+    const difficulty = isStoryMode ? storyLevels[currentLevel].difficulty : (isHardMode ? 0.7 : 0.4);
+    
+    // Smarter bot logic based on level
+    if (isStoryMode) {
+        if (currentLevel >= 8) { // Final bosses
+            // Check if current position is deadly
+            if (currentPosition === bulletPosition && botSpinsRemaining > 0) {
+                action = 'spin';
+            } else if (Math.random() < 0.8) { // 80% chance to make optimal choice
+                action = 'shoot';
+            } else {
+                action = 'spin';
+            }
+        } else if (currentLevel >= 5) { // Smarter bots
+            if (Math.random() < difficulty) {
+                action = 'shoot';
+            } else if (botSpinsRemaining > 0) {
+                action = 'spin';
+            } else {
+                action = 'shoot';
+            }
+        } else { // Early level bots
+            action = Math.random() < difficulty ? 'shoot' : 'spin';
+        }
+    } else {
+        action = Math.random() < difficulty ? 'shoot' : 'spin';
+    }
+    
+    if (action === 'spin' && botSpinsRemaining > 0) {
+        message.textContent = "Bot is spinning the chamber...";
+        await spinGun();
+        botSpinsRemaining--;
+        message.textContent = `Bot spun the chamber! (${botSpinsRemaining} spins remaining)`;
+    } else {
+        const shootSelf = Math.random() < (0.3 - (currentLevel * 0.02)); // Less likely to shoot self at higher levels
+        message.textContent = shootSelf ? "Bot shoots itself!" : "Bot shoots at you!";
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const hit = await shoot(shootSelf);
+        if (!hit && gameActive) {
+            isPlayerTurn = true;
+            updateTurnIndicator();
+        }
+    }
+    
+    if (gameActive) {
+        message.textContent = "Your turn! Choose your action.";
+        isPlayerTurn = true;
+        updateTurnIndicator();
+    }
+}
+
+function startStoryMode() {
+    isStoryMode = true;
+    currentLevel = 0;
+    menu.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    
+    // Set the player and bot colors for story mode
+    const player = document.getElementById('player');
+    const bot = document.getElementById('bot');
+    player.classList.add('blue-person');
+    bot.classList.add('red-person');
+    
+    createChambers();
+    updateTurnIndicator();
+    startStoryLevel();
+}
+
+function getRandomColor() {
+    const colorKeys = Object.keys(colors);
+    return colors[colorKeys[Math.floor(Math.random() * colorKeys.length)]];
+}
+
+function setupColorPicker() {
+    colorOptions.innerHTML = '';
+    Object.entries(colors).forEach(([name, color]) => {
+        const option = document.createElement('div');
+        option.className = 'color-option';
+        option.style.backgroundColor = color;
+        option.onclick = () => {
+            document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            selectedColor = color;
+            colorPreview.querySelector('.head').style.backgroundColor = color;
+            colorPreview.querySelector('.body').style.backgroundColor = color;
+            colorPreview.querySelector('.splat').style.backgroundColor = color;
+        };
+        colorOptions.appendChild(option);
+    });
+}
+
+continueStoryBtn.addEventListener('click', () => {
+    if (continueStoryBtn.textContent === "Return to Menu") {
+        // Reset everything for a new game
+        isStoryMode = false;
+        currentLevel = 0;
+        storyContainer.style.display = 'none';
+        menu.style.display = 'flex';
+        gameContainer.style.display = 'none';
+        
+        // Remove color classes
+        document.getElementById('player').classList.remove('blue-person');
+        document.getElementById('bot').classList.remove('red-person');
+        
+        // Reset continue button text
+        continueStoryBtn.textContent = "Continue";
+    } else {
+        storyContainer.style.display = 'none';
+        gameContainer.style.display = 'flex';
+        updateTurnIndicator();
+    }
+});
+
+document.getElementById('easyMode').addEventListener('click', () => {
+    isHardMode = false;
+    menu.style.display = 'none';
+    customizationContainer.style.display = 'flex';
+    setupColorPicker();
+});
+
+document.getElementById('hardMode').addEventListener('click', () => {
+    isHardMode = true;
+    menu.style.display = 'none';
+    customizationContainer.style.display = 'flex';
+    setupColorPicker();
+});
+
+// Add confirm color button event listener
+confirmColorBtn.addEventListener('click', () => {
+    if (!selectedColor) {
+        alert('Please select a color first!');
+        return;
+    }
+    
+    customizationContainer.style.display = 'none';
+    gameContainer.style.display = 'flex';
+    
+    // Set player color
+    const player = document.getElementById('player');
+    player.querySelector('.head').style.backgroundColor = selectedColor;
+    player.querySelector('.body').style.backgroundColor = selectedColor;
+    player.querySelector('.splat').style.backgroundColor = selectedColor;
+    
+    // Set random bot color
+    const botColor = getRandomColor();
+    const bot = document.getElementById('bot');
+    bot.querySelector('.head').style.backgroundColor = botColor;
+    bot.querySelector('.body').style.backgroundColor = botColor;
+    bot.querySelector('.splat').style.backgroundColor = botColor;
+    
+    // Reset spins and enable spin button
+    spinsRemaining = 1;
+    document.getElementById('spinChamber').disabled = false;
+    createChambers();
+    updateTurnIndicator();
+});
+
+// Modify the resetGame function to reset bot color in non-story mode
+function resetGame() {
+    if (isStoryMode) {
+        if (message.textContent.includes("You win")) {
+            currentLevel++;
+            startStoryLevel();
+        } else {
+            // Show game over menu instead of automatically restarting
+            showGameOverMenu();
+        }
+    } else {
+        // Reset spins for non-story mode
+        spinsRemaining = 1;
+        document.getElementById('spinChamber').disabled = false;
+        
+        // Give bot a new random color
+        const botColor = getRandomColor();
+        const bot = document.getElementById('bot');
+        bot.querySelector('.head').style.backgroundColor = botColor;
+        bot.querySelector('.body').style.backgroundColor = botColor;
+        bot.querySelector('.splat').style.backgroundColor = botColor;
     }
     menu.style.display = isStoryMode ? 'none' : 'flex';
     gameContainer.style.display = 'none';
@@ -564,50 +934,25 @@ function startStoryMode() {
     startStoryLevel();
 }
 
-continueStoryBtn.addEventListener('click', () => {
-    if (continueStoryBtn.textContent === "Return to Menu") {
-        // Reset everything for a new game
-        isStoryMode = false;
-        currentLevel = 0;
-        storyContainer.style.display = 'none';
-        menu.style.display = 'flex';
-        gameContainer.style.display = 'none';
-        
-        // Remove color classes
-        document.getElementById('player').classList.remove('blue-person');
-        document.getElementById('bot').classList.remove('red-person');
-        
-        // Reset continue button text
-        continueStoryBtn.textContent = "Continue";
-    } else {
-        storyContainer.style.display = 'none';
-        gameContainer.style.display = 'flex';
-        updateTurnIndicator();
-    }
-});
-
-document.getElementById('easyMode').addEventListener('click', () => {
-    isHardMode = false;
-    menu.style.display = 'none';
-    gameContainer.style.display = 'flex';
-    createChambers();
-    updateTurnIndicator();
-});
-
-document.getElementById('hardMode').addEventListener('click', () => {
-    isHardMode = true;
-    menu.style.display = 'none';
-    gameContainer.style.display = 'flex';
-    createChambers();
-    updateTurnIndicator();
-});
+createChambers();
+updateTurnIndicator();
 
 document.getElementById('storyMode').addEventListener('click', startStoryMode);
 
 document.getElementById('shootSelf').addEventListener('click', async () => {
-    if (!gameActive || !isPlayerTurn) return;
-    const hit = await shoot(true);
-    if (!hit && gameActive) {
+    if (!isPlayerTurn || !gameActive) return;
+    await shoot(true);
+    if (gameActive) {
+        isPlayerTurn = false;
+        updateTurnIndicator();
+        botTurn();
+    }
+});
+
+document.getElementById('shootOpponent').addEventListener('click', async () => {
+    if (!isPlayerTurn || !gameActive) return;
+    await shoot(false);
+    if (gameActive) {
         isPlayerTurn = false;
         updateTurnIndicator();
         botTurn();
@@ -615,27 +960,14 @@ document.getElementById('shootSelf').addEventListener('click', async () => {
 });
 
 document.getElementById('spinChamber').addEventListener('click', async () => {
-    if (!gameActive || !isPlayerTurn || spinsRemaining <= 0) return;
+    if (!isPlayerTurn || !gameActive || spinsRemaining <= 0) return;
     await spinGun();
     spinsRemaining--;
-    message.textContent = `Chamber spun! (${spinsRemaining} spins remaining)`;
     document.getElementById('spinChamber').disabled = spinsRemaining <= 0;
+    message.textContent = `Chamber spun! (${spinsRemaining} spins remaining)`;
     isPlayerTurn = false;
     updateTurnIndicator();
     botTurn();
 });
-
-document.getElementById('shootOpponent').addEventListener('click', async () => {
-    if (!gameActive || !isPlayerTurn) return;
-    const hit = await shoot(false);
-    if (!hit && gameActive) {
-        isPlayerTurn = false;
-        updateTurnIndicator();
-        botTurn();
-    }
-});
-
-createChambers();
-updateTurnIndicator();
 </script>
 </body></html>
