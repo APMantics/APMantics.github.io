@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="https://pngtree.com/free-png-vectors/dirt">
+<base href="." />
+<title>APcraft</title><style>
+body { margin: 0; overflow: hidden; background: #87CEEB; }
+#world { position: relative; perspective: 1000px; height: 100vh; display: none; }
+.block { 
+  width: 50px; 
+  height: 50px;
+  position: absolute;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.face {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+.grass { background: #8B4513; }
+.grass.top { background: #90EE90; }
+.stone { background: #808080; }
+#inventory {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  display: none;
+}
+.inv-item {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.inv-item.selected {
+  border-color: #ff0;
+  box-shadow: 0 0 10px #ff0;
+}
+#crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 20px;
+  pointer-events: none;
+  display: none;
+}
+#main-menu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+}
+.menu-button {
+  display: block;
+  width: 200px;
+  padding: 10px;
+  margin: 10px auto;
+  background: #4CAF50;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+.menu-button:hover {
+  background: #45a049;
+}
+#world-options {
+  display: none;
+  margin-top: 20px;
+}
+#world-options input {
+  display: block;
+  width: 180px;
+  padding: 5px;
+  margin: 10px auto;
+}
+#controls-menu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  text-align: left;
+  display: none;
+  z-index: 1000;
+}
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div id="main-menu">
+  <h1>Browser Minecraft</h1>
+  <button class="menu-button" onclick="showWorldOptions()">Create New World</button>
+  <div id="world-options">
+    <input type="text" id="world-name" placeholder="World Name">
+    <input type="number" id="world-size" placeholder="World Size (5-20)" min="5" max="20" value="5">
+    <button class="menu-button" onclick="createWorld()">Start Game</button>
+  </div>
+</div>
+
+<div id="controls-menu">
+  <button class="close-button" onclick="closeControlsMenu()">✕</button>
+  <h2>Controls</h2>
+  <ul>
+    <li>WASD - Move around</li>
+    <li>Arrow Keys - Turn camera</li>
+    <li>R - Place block</li>
+    <li>Q - Break block</li>
+    <li>E - Interact with blocks</li>
+  </ul>
+</div>
+
+<div id="world"></div>
+<div id="inventory">
+  <div class="inv-item grass selected"></div>
+  <div class="inv-item stone"></div>
+</div>
+<div id="crosshair">+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const world = document.getElementById('world');
+let blocks = [];
+let selectedBlock = 'grass';
+let rotationX = 0;
+let rotationY = 0;
+let playerX = 0;
+let playerY = 100;
+let playerZ = 0;
+const CHUNK_SIZE = 10;
+const RENDER_DISTANCE = 5;
+const BLOCK_SIZE = 50;
+
+function showWorldOptions() {
+  document.getElementById('world-options').style.display = 'block';
+}
+
+function closeControlsMenu() {
+  document.getElementById('controls-menu').style.display = 'none';
+}
+
+function createWorld() {
+  const worldName = document.getElementById('world-name').value || 'My World';
+  
+  document.getElementById('main-menu').style.display = 'none';
+  document.getElementById('world').style.display = 'block';
+  document.getElementById('inventory').style.display = 'flex';
+  document.getElementById('crosshair').style.display = 'block';
+  document.getElementById('controls-menu').style.display = 'block';
+  
+  updateLoadedChunks();
+  gameLoop();
+}
+
+function getChunkCoord(pos) {
+  return Math.floor(pos / (CHUNK_SIZE * BLOCK_SIZE));
+}
+
+function createBlock(x, y, z, type) {
+  const block = document.createElement('div');
+  block.className = 'block';
+  block.dataset.type = type;
+  
+  const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'];
+  faces.forEach(face => {
+    const faceDiv = document.createElement('div');
+    faceDiv.className = `face ${face} ${type}`;
+    if(face === 'top' && type === 'grass') faceDiv.className += ' top';
+    block.appendChild(faceDiv);
+  });
+  
+  block.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
+  world.appendChild(block);
+  blocks.push({element: block, x, y, z, type});
+}
+
+function generateChunk(chunkX, chunkZ) {
+  const startX = chunkX * CHUNK_SIZE * BLOCK_SIZE;
+  const startZ = chunkZ * CHUNK_SIZE * BLOCK_SIZE;
+  
+  for(let x = 0; x < CHUNK_SIZE; x++) {
+    for(let z = 0; z < CHUNK_SIZE; z++) {
+      createBlock(
+        startX + x * BLOCK_SIZE,
+        0,
+        startZ + z * BLOCK_SIZE,
+        'grass'
+      );
+    }
+  }
+}
+
+function updateLoadedChunks() {
+  const playerChunkX = getChunkCoord(playerX);
+  const playerChunkZ = getChunkCoord(playerZ);
+  
+  blocks = blocks.filter(block => {
+    const blockChunkX = getChunkCoord(block.x);
+    const blockChunkZ = getChunkCoord(block.z);
+    
+    if(Math.abs(blockChunkX - playerChunkX) > RENDER_DISTANCE ||
+       Math.abs(blockChunkZ - playerChunkZ) > RENDER_DISTANCE) {
+      world.removeChild(block.element);
+      return false;
+    }
+    return true;
+  });
+  
+  for(let cx = playerChunkX - RENDER_DISTANCE; cx <= playerChunkX + RENDER_DISTANCE; cx++) {
+    for(let cz = playerChunkZ - RENDER_DISTANCE; cz <= playerChunkZ + RENDER_DISTANCE; cz++) {
+      const chunkExists = blocks.some(block => 
+        getChunkCoord(block.x) === cx && getChunkCoord(block.z) === cz
+      );
+      
+      if(!chunkExists) {
+        generateChunk(cx, cz);
+      }
+    }
+  }
+}
+
+document.querySelectorAll('.inv-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelector('.selected').classList.remove('selected');
+    item.classList.add('selected');
+    selectedBlock = item.classList.contains('grass') ? 'grass' : 'stone';
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  const speed = 5;
+  const rotationSpeed = 2;
+  const rad = rotationY * Math.PI / 180;
+
+  switch(e.key.toLowerCase()) {
+    case 'w':
+      playerX += Math.sin(rad) * speed;
+      playerZ += Math.cos(rad) * speed;
+      break;
+    case 's':
+      playerX -= Math.sin(rad) * speed;
+      playerZ -= Math.cos(rad) * speed;
+      break;
+    case 'a':
+      playerX -= Math.cos(rad) * speed;
+      playerZ += Math.sin(rad) * speed;
+      break;
+    case 'd':
+      playerX += Math.cos(rad) * speed;
+      playerZ -= Math.sin(rad) * speed;
+      break;
+    case 'arrowleft':
+      rotationY -= rotationSpeed;
+      break;
+    case 'arrowright':
+      rotationY += rotationSpeed;
+      break;
+    case 'arrowup':
+      rotationX = Math.max(-60, rotationX - rotationSpeed);
+      break;
+    case 'arrowdown':
+      rotationX = Math.min(60, rotationX + rotationSpeed);
+      break;
+    case 'q':
+      // Find closest block and remove it
+      const closestBlock = blocks.reduce((closest, block) => {
+        const distance = Math.sqrt(
+          Math.pow(block.x - playerX, 2) +
+          Math.pow(block.y - playerY, 2) +
+          Math.pow(block.z - playerZ, 2)
+        );
+        return distance < closest.distance ? {block, distance} : closest;
+      }, {distance: Infinity}).block;
+      
+      if(closestBlock) {
+        world.removeChild(closestBlock.element);
+        blocks = blocks.filter(b => b !== closestBlock);
+      }
+      break;
+    case 'r':
+      // Place block in front of player
+      const placeX = playerX + Math.sin(rad) * BLOCK_SIZE;
+      const placeZ = playerZ + Math.cos(rad) * BLOCK_SIZE;
+      createBlock(
+        Math.round(placeX / BLOCK_SIZE) * BLOCK_SIZE,
+        0,
+        Math.round(placeZ / BLOCK_SIZE) * BLOCK_SIZE,
+        selectedBlock
+      );
+      break;
+  }
+});
+
+function gameLoop() {
+  updateLoadedChunks();
+  world.style.transform = `translate3d(${-playerX}px, ${-playerY}px, ${-playerZ}px) rotateX(${-rotationX}deg) rotateY(${rotationY}deg)`;
+  requestAnimationFrame(gameLoop);
+}
+</script>
+</body></html>
