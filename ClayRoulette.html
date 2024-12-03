@@ -309,6 +309,64 @@ button:disabled {
     cursor: pointer;
 }
 
+.rules-container, .freeplay-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.rules-content, .freeplay-content {
+    background: #2b1810;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #e6d5cc;
+    position: relative;
+}
+
+.rules-content h2, .freeplay-content h2 {
+    color: #ffd700;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.close-rules, .close-freeplay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #e6d5cc;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.rules-text {
+    line-height: 1.6;
+}
+
+.rules-text ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.freeplay-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 300px;
+}
+
 @keyframes bounce {
     from {
         transform: translateY(0);
@@ -323,9 +381,9 @@ button:disabled {
 <div id="menu" class="menu">
     <h1>Clay Roulette</h1>
     <div class="menu-buttons">
-        <button id="easyMode">Easy Mode</button>
-        <button id="hardMode">Hard Mode</button>
+        <button id="freeplayMode">Freeplay</button>
         <button id="storyMode">Story Mode</button>
+        <button id="rulesBtn">Rules</button>
     </div>
 </div>
 
@@ -376,7 +434,7 @@ button:disabled {
 </div>
 
 <div class="version-container">
-    <span class="version-text">V2.0</span>
+    <span class="version-text">V3.0</span>
     <div class="new-indicator">New!</div>
     <button id="changelogBtn">Changelog</button>
 </div>
@@ -388,14 +446,47 @@ button:disabled {
         <h3>Version 1.0</h3>
         <ul>
             <li>Initial Release</li>
-            <li>10 level Story mode</li>
+            <li>10 level Story Mode</li>
             <li>Freeplay Easy and Hard Modes</li>
         </ul>
         <h3>Version 2.0</h3>
         <ul>
-            <li>Added character customization</li>
-            <li>Added Changelog</li
+            <li>Added Character Customization</li>
+            <li>Added Changelog</li>
         </ul>
+        <h3>Version 3.0</h3>
+        <ul>
+            <li>Spinning the Chamber no longer ends turn</li>
+            <li>Changed how Shooting your Opponent works</li>
+            <li>Added Rules Menu</li>
+            <li>Combined Easy and Hard Modes into Freeplay menu</li>
+        </ul>
+    </div>
+</div>
+
+<div class="rules-container" id="rulesModal">
+    <div class="rules-content">
+        <button class="close-rules" id="closeRules">×</button>
+        <h2>Game Rules</h2>
+        <div class="rules-text">
+            <p>You and your opponent take turns with the revolver.</p>
+            <p>You have the options to:</p>
+            <ul>
+                <li>Spin the chamber</li>
+                <li>Shoot yourself</li>
+                <li>Shoot your opponent</li>
+            </ul>
+            <p>If you shoot your opponent and the round is a blank, you must shoot yourself.</p>
+        </div>
+    </div>
+</div>
+
+<div class="freeplay-menu" id="freeplayMenu">
+    <div class="freeplay-content">
+        <h2>Select Difficulty</h2>
+        <button id="easyMode">Easy Mode</button>
+        <button id="hardMode">Hard Mode</button>
+        <button class="close-freeplay" id="closeFreeplay">Back</button>
     </div>
 </div>
 
@@ -685,6 +776,8 @@ function resetGame() {
     } else {
         spinsRemaining = 1;
         document.getElementById('spinChamber').disabled = false;
+        // Ensure shootOpponent is enabled when resetting
+        document.getElementById('shootOpponent').disabled = false;
         
         const botColor = getRandomColor();
         const bot = document.getElementById('bot');
@@ -743,6 +836,9 @@ async function botTurn() {
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Re-enable shoot opponent button at start of bot turn
+    document.getElementById('shootOpponent').disabled = false;
+    
     let action;
     const difficulty = isStoryMode ? storyLevels[currentLevel].difficulty : (isHardMode ? 0.7 : 0.4);
     
@@ -777,20 +873,40 @@ async function botTurn() {
         await spinGun();
         botSpinsRemaining--;
         message.textContent = `Bot spun the chamber! (${botSpinsRemaining} spins remaining)`;
+        // After spinning, stay on bot's turn and call botTurn again after a delay
+        if (gameActive) {
+            setTimeout(() => botTurn(), 1500);
+        }
     } else {
         const shootSelf = Math.random() < (0.3 - (currentLevel * 0.02)); // Less likely to shoot self at higher levels
-        message.textContent = shootSelf ? "Bot shoots itself!" : "Bot shoots at you!";
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const hit = await shoot(shootSelf);
-        if (!hit && gameActive) {
-            isPlayerTurn = true;
-            updateTurnIndicator();
+        
+        if (shootSelf) {
+            message.textContent = "Bot shoots itself!";
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const hit = await shoot(true);
+            if (!hit && gameActive) {
+                isPlayerTurn = true;
+                updateTurnIndicator();
+            }
+        } else {
+            message.textContent = "Bot shoots at you!";
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const hit = await shoot(false);
+            if (!hit && gameActive) {
+                // If it's a blank when shooting player, bot must shoot self next
+                message.textContent = "Click! Empty chamber. Bot must shoot itself!";
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const selfHit = await shoot(true);
+                if (!selfHit && gameActive) {
+                    isPlayerTurn = true;
+                    updateTurnIndicator();
+                }
+            }
         }
     }
     
-    if (gameActive) {
+    if (gameActive && isPlayerTurn) {
         message.textContent = "Your turn! Choose your action.";
-        isPlayerTurn = true;
         updateTurnIndicator();
     }
 }
@@ -871,25 +987,58 @@ continueStoryBtn.addEventListener('click', () => {
     }
 });
 
+// Add event listener for story mode button
+document.getElementById('storyMode').addEventListener('click', startStoryMode);
+
+document.getElementById('freeplayMode').addEventListener('click', () => {
+    document.getElementById('freeplayMenu').style.display = 'flex';
+});
+
+document.getElementById('closeFreeplay').addEventListener('click', () => {
+    document.getElementById('freeplayMenu').style.display = 'none';
+});
+
+document.getElementById('rulesBtn').addEventListener('click', () => {
+    document.getElementById('rulesModal').style.display = 'flex';
+});
+
+document.getElementById('closeRules').addEventListener('click', () => {
+    document.getElementById('rulesModal').style.display = 'none';
+});
+
+// Close modals when clicking outside
+document.getElementById('rulesModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('rulesModal')) {
+        document.getElementById('rulesModal').style.display = 'none';
+    }
+});
+
+document.getElementById('freeplayMenu').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('freeplayMenu')) {
+        document.getElementById('freeplayMenu').style.display = 'none';
+    }
+});
+
+// Update the mode button event listeners
 document.getElementById('easyMode').addEventListener('click', () => {
     isHardMode = false;
+    document.getElementById('freeplayMenu').style.display = 'none';
     menu.style.display = 'none';
     customizationContainer.style.display = 'flex';
-    // Hide version container
     document.querySelector('.version-container').style.display = 'none';
     setupColorPicker();
 });
 
 document.getElementById('hardMode').addEventListener('click', () => {
     isHardMode = true;
+    document.getElementById('freeplayMenu').style.display = 'none';
     menu.style.display = 'none';
     customizationContainer.style.display = 'flex';
-    // Hide version container
     document.querySelector('.version-container').style.display = 'none';
     setupColorPicker();
 });
 
-// Add confirm color button event listener
+// Modify confirmColorBtn event listener to ensure shootOpponent is enabled at game start
 confirmColorBtn.addEventListener('click', () => {
     if (!selectedColor) {
         alert('Please select a color first!');
@@ -915,49 +1064,13 @@ confirmColorBtn.addEventListener('click', () => {
     // Reset spins and enable spin button
     spinsRemaining = 1;
     document.getElementById('spinChamber').disabled = false;
+    
+    // Ensure shootOpponent is enabled at game start
+    document.getElementById('shootOpponent').disabled = false;
+    
     createChambers();
     updateTurnIndicator();
 });
-
-// Add event listeners for shooting and spinning actions
-document.getElementById('shootSelf').addEventListener('click', async () => {
-    if (!isPlayerTurn || !gameActive) return;
-    const hit = await shoot(true);
-    if (!hit && gameActive) {
-        isPlayerTurn = false;
-        updateTurnIndicator();
-        botTurn();
-    }
-});
-
-document.getElementById('shootOpponent').addEventListener('click', async () => {
-    if (!isPlayerTurn || !gameActive) return;
-    const hit = await shoot(false);
-    if (!hit && gameActive) {
-        isPlayerTurn = false;
-        updateTurnIndicator();
-        botTurn();
-    }
-});
-
-document.getElementById('spinChamber').addEventListener('click', async () => {
-    if (!isPlayerTurn || !gameActive || spinsRemaining <= 0) return;
-    
-    spinsRemaining--;
-    if (spinsRemaining <= 0) {
-        document.getElementById('spinChamber').disabled = true;
-    }
-    
-    message.textContent = `Spinning the chamber! (${spinsRemaining} spins remaining)`;
-    await spinGun();
-    if (gameActive) {
-        isPlayerTurn = false;
-        updateTurnIndicator();
-        botTurn();
-    }
-});
-
-document.getElementById('storyMode').addEventListener('click', startStoryMode);
 
 // Changelog functionality
 const changelogBtn = document.getElementById('changelogBtn');
@@ -978,5 +1091,42 @@ changelogModal.addEventListener('click', (e) => {
         changelogModal.style.display = 'none';
     }
 });
+
+// New event listeners
+document.getElementById('shootSelf').addEventListener('click', async () => {
+    if (!isPlayerTurn || !gameActive) return;
+    await shoot(true);
+    if (gameActive) {
+        isPlayerTurn = false;
+        updateTurnIndicator();
+        botTurn();
+    }
+});
+
+document.getElementById('spinChamber').addEventListener('click', async () => {
+    if (!isPlayerTurn || !gameActive || spinsRemaining <= 0) return;
+    message.textContent = "Spinning the chamber...";
+    await spinGun();
+    spinsRemaining--;
+    document.getElementById('spinChamber').disabled = spinsRemaining <= 0;
+    message.textContent = `Chamber spun! (${spinsRemaining} spins remaining)`;
+});
+
+document.getElementById('shootOpponent').addEventListener('click', async () => {
+    if (!isPlayerTurn || !gameActive) return;
+    const hit = await shoot(false);
+    if (gameActive) {
+        if (!hit) {
+            // Disable shoot opponent button after a miss
+            document.getElementById('shootOpponent').disabled = true;
+            message.textContent = "Click! Empty chamber. Still your turn!";
+        } else {
+            isPlayerTurn = false;
+            updateTurnIndicator();
+            botTurn();
+        }
+    }
+});
 </script>
-</body></html>
+</body>
+</html>
