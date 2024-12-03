@@ -375,6 +375,37 @@ button:disabled {
         transform: translateY(-3px);
     }
 }
+
+/* Add this CSS for the cheat menu */
+.cheat-menu {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 15px;
+    border-radius: 5px;
+    display: none;
+    z-index: 2000;
+}
+
+.cheat-menu input {
+    background: #333;
+    color: #e6d5cc;
+    border: 1px solid #666;
+    padding: 5px;
+    margin-bottom: 10px;
+    width: 150px;
+}
+
+.level-select {
+    display: none;
+    margin-top: 10px;
+}
+
+.level-select button {
+    margin: 5px;
+    padding: 5px 10px;
+}
 </style>
 </head>
 <body>
@@ -487,6 +518,13 @@ button:disabled {
         <button id="easyMode">Easy Mode</button>
         <button id="hardMode">Hard Mode</button>
         <button class="close-freeplay" id="closeFreeplay">Back</button>
+    </div>
+</div>
+
+<div class="cheat-menu" id="cheatMenu">
+    <input type="text" id="cheatCode" placeholder="Enter cheat code">
+    <div class="level-select" id="levelSelect">
+        <div style="color: #e6d5cc; margin-bottom: 10px;">Select Level:</div>
     </div>
 </div>
 
@@ -1125,6 +1163,58 @@ document.getElementById('shootOpponent').addEventListener('click', async () => {
             updateTurnIndicator();
             botTurn();
         }
+    }
+});
+
+// Cheat menu functionality
+let cheatMenuOpen = false;
+const cheatMenu = document.getElementById('cheatMenu');
+const cheatCodeInput = document.getElementById('cheatCode');
+const levelSelect = document.getElementById('levelSelect');
+
+// Create level select buttons
+function createLevelButtons() {
+    levelSelect.innerHTML = '<div style="color: #e6d5cc; margin-bottom: 10px;">Select Level:</div>';
+    for (let i = 0; i < storyLevels.length; i++) {
+        const button = document.createElement('button');
+        button.textContent = `Level ${i + 1}`;
+        button.onclick = () => {
+            currentLevel = i;
+            cheatMenu.style.display = 'none';
+            cheatMenuOpen = false;
+            startStoryLevel();
+        };
+        levelSelect.appendChild(button);
+    }
+}
+
+// Add event listener for the tilde key
+document.addEventListener('keydown', (e) => {
+    if (e.key === '`' && isStoryMode) {
+        cheatMenuOpen = !cheatMenuOpen;
+        cheatMenu.style.display = cheatMenuOpen ? 'block' : 'none';
+        if (cheatMenuOpen) {
+            cheatCodeInput.value = '';
+            cheatCodeInput.focus();
+        }
+    }
+});
+
+// Check cheat code input
+cheatCodeInput.addEventListener('input', (e) => {
+    if (e.target.value === 'SkibidiRizz69') {
+        createLevelButtons();
+        levelSelect.style.display = 'block';
+    } else {
+        levelSelect.style.display = 'none';
+    }
+});
+
+// Close cheat menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (cheatMenuOpen && !cheatMenu.contains(e.target)) {
+        cheatMenu.style.display = 'none';
+        cheatMenuOpen = false;
     }
 });
 </script>
