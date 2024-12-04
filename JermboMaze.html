@@ -20,19 +20,31 @@ body { margin: 0; overflow: hidden; }
         font-family: Arial, sans-serif;
         z-index: 1000;
     }
+    .warning-text {
+        position: fixed;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: red;
+        font-family: Arial, sans-serif;
+        z-index: 1000;
+        animation: flash 0.5s ease-in-out infinite alternate;
+        display: none;
+    }
+    
+    @keyframes flash {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
 </style>
 </head>
 <body>
 <div class="loading-screen">Loading Maze...</div>
+<div class="warning-text">FAFA IS HERE.</div>
 <div id="game-container"></div>
-
-<h1>MP3 Audio Playback</h1>
-
-<!-- Audio player that will play the MP3 file continuously -->
-<audio id="audioPlayer" autoplay loop>
-<source src="Deck the Halls - Instrumental.mp3" type="audio/mp3">
-Your browser does not support the audio element.
-</audio>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
@@ -48,18 +60,20 @@ let velocity = new THREE.Vector3();
 let rotationVelocity = 0;
 let prevTime = performance.now();
 let wallMeshes = [];
-let npcTexture;
-let npcClones = []; // Array to store NPC clones
+let npcTexture, chasingTexture;
+let decorationTexture;
+let decorations = [];
+let npcClones = [];
 
-const MAZE_SIZE = 25; // Increased from 15 to 25
+const MAZE_SIZE = 25;
 const WALL_HEIGHT = 5;
 const CELL_SIZE = 10;
 const TURN_SPEED = 2;
 const WALK_SPEED = 8;
 const SPRINT_SPEED = 16;
 const COLLISION_THRESHOLD = 2;
-const NPC_PATROL_SPEED = 4; // Simplified NPC speed
-const NPC_TURN_SPEED = Math.PI * 2; // How fast NPC can turn
+const NPC_PATROL_SPEED = 4;
+const NPC_TURN_SPEED = Math.PI * 2;
 
 let maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
 let npc;
@@ -70,7 +84,7 @@ function generateMaze(x, y) {
     maze[x][y] = 0;
     const directions = [
         [0,2], [2,0], [0,-2], [-2,0],
-        [0,2], [2,0], [0,-2], [-2,0] // Duplicate directions to increase path complexity
+        [0,2], [2,0], [0,-2], [-2,0]
     ];
     directions.sort(() => Math.random() - 0.5);
     
@@ -79,8 +93,7 @@ function generateMaze(x, y) {
         const nextY = y + dy;
         
         if(nextX > 0 && nextX < MAZE_SIZE-1 && nextY > 0 && nextY < MAZE_SIZE-1 && maze[nextX][nextY] === 1) {
-            // Increase chance of creating paths
-            if(Math.random() > 0.2) { // Reduced from 0.5 to 0.2 to create more paths
+            if(Math.random() > 0.2) {
                 maze[x + dx/2][y + dy/2] = 0;
                 generateMaze(nextX, nextY);
             }
@@ -100,9 +113,7 @@ function findRandomEmptyCell() {
 function updateNPCDirection() {
     if (!npc) return;
     
-    // Random direction for patrolling
     const randomAngle = Math.random() * Math.PI * 2;
-    // Update both original NPC and clones
     const updateDirectionForNPC = (npcObj) => {
         npcObj.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
         npcObj.targetRotation = Math.atan2(npcObj.direction.x, npcObj.direction.z);
@@ -112,8 +123,30 @@ function updateNPCDirection() {
     npcClones.forEach(updateDirectionForNPC);
 }
 
+function spawnChasingNPC() {
+    const randomCell = findRandomEmptyCell();
+    const chasingNpcGeometry = new THREE.PlaneGeometry(4, 4);
+    const chasingNpcMaterial = new THREE.MeshBasicMaterial({
+        map: chasingTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    const chasingNpc = new THREE.Mesh(chasingNpcGeometry, chasingNpcMaterial);
+    chasingNpc.position.set(
+        randomCell.x * CELL_SIZE + CELL_SIZE/2,
+        2,
+        randomCell.y * CELL_SIZE + CELL_SIZE/2
+    );
+    
+    const randomAngle = Math.random() * Math.PI * 2;
+    chasingNpc.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+    chasingNpc.targetRotation = Math.atan2(chasingNpc.direction.x, chasingNpc.direction.z);
+    chasingNpc.isChasing = true;
+    scene.add(chasingNpc);
+    npcClones.push(chasingNpc);
+}
+
 function resetMaze() {
-    // Clear all NPC clones
     npcClones.forEach(clone => {
         scene.remove(clone);
     });
@@ -129,8 +162,8 @@ function resetMaze() {
     const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
     const wallMaterial = new THREE.MeshStandardMaterial({
         map: wallTexture,
-        roughness: 0.5, // Reduced from 0.7
-        metalness: 0.1  // Reduced from 0.3
+        roughness: 0.5,
+        metalness: 0.1
     });
     
     for(let i = 0; i < MAZE_SIZE; i++) {
@@ -147,13 +180,46 @@ function resetMaze() {
     camera.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
     camera.rotation.set(0, 0, 0);
     
-    // Reset NPC position
     const npcCell = findRandomEmptyCell();
     npc.position.set(npcCell.x * CELL_SIZE + CELL_SIZE/2, 2, npcCell.y * CELL_SIZE + CELL_SIZE/2);
-    // Ensure direction is set
     npc.direction = new THREE.Vector3(1, 0, 0);
     npc.targetRotation = 0;
     updateNPCDirection();
+
+    createDecorations();
+}
+
+function createDecorations() {
+    decorations.forEach(decoration => scene.remove(decoration));
+    decorations = [];
+    
+    for(let i = 0; i < MAZE_SIZE; i++) {
+        for(let j = 0; j < MAZE_SIZE; j++) {
+            if(maze[i][j] === 0 && Math.random() < 0.3) {
+                const decorationGeometry = new THREE.PlaneGeometry(6, 6);
+                const decorationMaterial = new THREE.MeshBasicMaterial({
+                    map: decorationTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                const decoration = new THREE.Mesh(decorationGeometry, decorationMaterial);
+                
+                const offsetX = (Math.random() - 0.5) * 4;
+                const offsetZ = (Math.random() - 0.5) * 4;
+                
+                decoration.position.set(
+                    i * CELL_SIZE + CELL_SIZE/2 + offsetX,
+                    2,
+                    j * CELL_SIZE + CELL_SIZE/2 + offsetZ
+                );
+                
+                decoration.rotation.y = Math.random() * Math.PI * 2;
+                
+                scene.add(decoration);
+                decorations.push(decoration);
+            }
+        }
+    }
 }
 
 function checkCollision(position) {
@@ -203,23 +269,20 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('game-container').appendChild(renderer.domElement);
     
-    // Increase ambient light intensity
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Increased intensity
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    // Add directional light with adjusted intensity
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // Reduced intensity since ambient is brighter
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
-    // Add multiple point lights throughout the maze
     const pointLights = [];
     const lightPositions = [
-        [0.25, 0.25], // Top-left quarter
-        [0.75, 0.25], // Top-right quarter
-        [0.25, 0.75], // Bottom-left quarter
-        [0.75, 0.75], // Bottom-right quarter
-        [0.5, 0.5]    // Center
+        [0.25, 0.25],
+        [0.75, 0.25],
+        [0.25, 0.75],
+        [0.75, 0.75],
+        [0.5, 0.5]
     ];
 
     lightPositions.forEach(([x, z]) => {
@@ -235,20 +298,22 @@ function init() {
 
     const textureLoader = new THREE.TextureLoader();
     
-    // Load all textures first
     Promise.all([
         new Promise(resolve => textureLoader.load('https://i.ibb.co/BjjXFsZ/image.png', resolve)),
         new Promise(resolve => textureLoader.load('https://i.ibb.co/L0PQT8z/image.png', resolve)),
         new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
         new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)) // Door texture
-    ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex]) => {
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/L030VY4/image.png', resolve)),
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve))
+    ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, chasingTex, decorTex]) => {
         npcTexture = npcTex;
         wallTexture = wallTex;
         floorTexture = floorTex;
         ceilingTexture = ceilingTex;
-        
-        // Configure textures
+        chasingTexture = chasingTex;
+        decorationTexture = decorTex;
+
         wallTexture.wrapS = THREE.RepeatWrapping;
         wallTexture.wrapT = THREE.RepeatWrapping;
         wallTexture.repeat.set(1, 1);
@@ -261,8 +326,7 @@ function init() {
         ceilingTexture.wrapT = THREE.RepeatWrapping;
         ceilingTexture.repeat.set(MAZE_SIZE, MAZE_SIZE);
         
-        // Create NPC
-        const npcGeometry = new THREE.PlaneGeometry(4, 4); // Updated size for NPC
+        const npcGeometry = new THREE.PlaneGeometry(4, 4);
         const npcMaterial = new THREE.MeshBasicMaterial({
             map: npcTexture,
             transparent: true,
@@ -270,40 +334,35 @@ function init() {
         });
         npc = new THREE.Mesh(npcGeometry, npcMaterial);
         npc.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
-        // Add these properties
         npc.direction = new THREE.Vector3(1, 0, 0);
         npc.targetRotation = 0;
         scene.add(npc);
         
-        // Start NPC direction updates
-        updateNPCDirection(); // Initial direction for NPC
+        updateNPCDirection();
         
-        // Create ceiling
         const ceilingGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
         const ceilingMaterial = new THREE.MeshStandardMaterial({
             map: ceilingTexture,
             side: THREE.DoubleSide,
-            roughness: 0.5, // Reduced from 0.8
-            metalness: 0.1  // Reduced from 0.2
+            roughness: 0.5,
+            metalness: 0.1
         });
         const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
         ceiling.rotation.x = Math.PI / 2;
         ceiling.position.set((MAZE_SIZE * CELL_SIZE)/2, WALL_HEIGHT, (MAZE_SIZE * CELL_SIZE)/2);
         scene.add(ceiling);
         
-        // Create floor
         const floorGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
         const floorMaterial = new THREE.MeshStandardMaterial({
             map: floorTexture,
-            roughness: 0.5, // Reduced from 0.8
-            metalness: 0.1  // Reduced from 0.2
+            roughness: 0.5,
+            metalness: 0.1
         });
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
         floor.position.set((MAZE_SIZE * CELL_SIZE)/2, 0, (MAZE_SIZE * CELL_SIZE)/2);
         scene.add(floor);
         
-        // Replace the golden cube with a door
         const doorGeometry = new THREE.PlaneGeometry(4, 4);
         const doorMaterial = new THREE.MeshBasicMaterial({
             map: doorTex,
@@ -312,14 +371,11 @@ function init() {
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
         door.position.set((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE);
-        // Rotate the door to face diagonally
         door.rotation.y = Math.PI / 4;
         scene.add(door);
 
-        // Now that everything is loaded, generate the initial maze
         resetMaze();
         
-        // Hide loading screen
         document.querySelector('.loading-screen').style.display = 'none';
     });
     
@@ -327,53 +383,70 @@ function init() {
     document.addEventListener('keyup', onKeyUp);
 }
 
+function showWarningAndSpawnFafa() {
+    const warningText = document.querySelector('.warning-text');
+    warningText.style.display = 'block';
+    
+    spawnChasingNPC();
+    
+    setTimeout(() => {
+        warningText.style.display = 'none';
+    }, 3000);
+}
+
 function updateNPC(delta) {
-    // Update original NPC
     if (npc) {
         updateSingleNPC(npc, delta);
     }
     
-    // Update all NPC clones
     npcClones.forEach(clone => {
         updateSingleNPC(clone, delta);
     });
 }
 
 function updateSingleNPC(npcObject, delta) {
-    if (!npcObject || !npcObject.direction || !npcObject.targetRotation) {
+    if (!npcObject || !npcObject.direction || typeof npcObject.targetRotation === 'undefined') {
         return;
     }
     
     const moveAmount = NPC_PATROL_SPEED * delta;
     
-    // Smooth rotation
-    const currentRotation = Math.atan2(
-        Math.sin(npcObject.rotation.y),
-        Math.cos(npcObject.rotation.y)
-    );
+    if (npcObject.isChasing) {
+        const directionToPlayer = new THREE.Vector3()
+            .subVectors(camera.position, npcObject.position)
+            .normalize();
+        
+        npcObject.direction.copy(directionToPlayer);
+        npcObject.targetRotation = Math.atan2(directionToPlayer.x, directionToPlayer.z);
+        
+        const chasingSpeed = NPC_PATROL_SPEED * 2;
+        const potentialPosition = npcObject.position.clone();
+        potentialPosition.add(directionToPlayer.multiplyScalar(chasingSpeed * delta));
+        
+        if (!checkCollision(potentialPosition)) {
+            npcObject.position.copy(potentialPosition);
+        }
+    } else {
+        const potentialPosition = npcObject.position.clone();
+        potentialPosition.add(npcObject.direction.clone().multiplyScalar(moveAmount));
+        
+        if (!checkCollision(potentialPosition)) {
+            npcObject.position.copy(potentialPosition);
+        } else {
+            const randomAngle = Math.random() * Math.PI * 2;
+            npcObject.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+            npcObject.targetRotation = Math.atan2(npcObject.direction.x, npcObject.direction.z);
+        }
+    }
     
-    // Calculate shortest rotation direction
+    const currentRotation = npcObject.rotation.y;
     let rotationDiff = npcObject.targetRotation - currentRotation;
+    
     while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
     while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
     
-    // Apply smooth rotation
     npcObject.rotation.y += Math.sign(rotationDiff) * 
-                      Math.min(Math.abs(rotationDiff), NPC_TURN_SPEED * delta);
-    
-    // Try to move forward
-    const potentialPosition = npcObject.position.clone();
-    potentialPosition.add(npcObject.direction.clone().multiplyScalar(moveAmount));
-    
-    // Check for collision and update position
-    if (!checkCollision(potentialPosition)) {
-        npcObject.position.copy(potentialPosition);
-    } else {
-        // If hit wall, change direction
-        const randomAngle = Math.random() * Math.PI * 2;
-        npcObject.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-        npcObject.targetRotation = Math.atan2(npcObject.direction.x, npcObject.direction.z);
-    }
+                           Math.min(Math.abs(rotationDiff), NPC_TURN_SPEED * delta);
 }
 
 function onKeyDown(event) {
@@ -399,7 +472,6 @@ function onKeyDown(event) {
             isSprinting = true;
             break;
         case 'KeyL':
-            // Create a new NPC clone at player's position
             const npcGeometry = new THREE.PlaneGeometry(4, 4);
             const npcMaterial = new THREE.MeshBasicMaterial({
                 map: npcTexture,
@@ -412,7 +484,6 @@ function onKeyDown(event) {
             npcClone.targetRotation = 0;
             scene.add(npcClone);
             npcClones.push(npcClone);
-            // Give each clone its own random direction
             const randomAngle = Math.random() * Math.PI * 2;
             npcClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
             npcClone.targetRotation = Math.atan2(npcClone.direction.x, npcClone.direction.z);
@@ -451,7 +522,6 @@ function animate() {
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
     
-    // Player movement
     if(turnLeft) camera.rotation.y += TURN_SPEED * delta;
     if(turnRight) camera.rotation.y -= TURN_SPEED * delta;
     
@@ -475,14 +545,15 @@ function animate() {
         camera.position.copy(potentialPosition);
     }
     
-    // NPC movement - completely separate from player movement
     updateNPC(delta);
     
-    // Check win condition
     const distance = camera.position.distanceTo(
         new THREE.Vector3((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE)
     );
     if(distance < 3) {
+        if (Math.random() < 0.001) {
+            showWarningAndSpawnFafa();
+        }
         resetMaze();
     }
     
