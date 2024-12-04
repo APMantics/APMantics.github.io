@@ -30,14 +30,14 @@
             z-index: 1;
         }
         
-        /* Container for centering content vertically and horizontally */
         .container {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             position: relative;
-            z-index: 2; /* Ensure the container appears above the background */
+            top: 50%;  /* Move the container 50% from the top of the screen */
+            z-index: 2;
         }
 
         /* Style for the typewriter text */
@@ -81,7 +81,7 @@
 
         /* Optional: Adjust button spacing if needed */
         .container a {
-            margin: 5px 0;
+            margin: 10px 0;
         }
     </style>
 </head>
