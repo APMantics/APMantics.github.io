@@ -34,6 +34,11 @@ body { margin: 0; overflow: hidden; }
         animation: flash 0.5s ease-in-out infinite alternate;
         display: none;
     }
+
+     /* Optional: Hide the audio controls */
+     audio {
+      display: none;
+    }
     
     @keyframes flash {
         from { opacity: 1; }
@@ -41,6 +46,13 @@ body { margin: 0; overflow: hidden; }
     }
 </style>
 </head>
+<body>
+    <!-- Audio element with loop and autoplay attributes -->
+    <audio id="bg-music" autoplay loop>
+      <source src="Deck the Halls - Instrumental.mp3" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
+  </body>
 <body>
 <div class="loading-screen">Loading Maze...</div>
 <div class="warning-text">FAFA IS HERE.</div>
