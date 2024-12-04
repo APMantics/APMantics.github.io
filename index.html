@@ -107,6 +107,26 @@
             color: #fff;
             transform: scale(1.05);
         }
+
+        .ClayRoulette-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: 2px solid #fff; /* New border color */
+            border-radius: 50px; /* Circular border */
+            background-color: #5452b7;
+            font-size: 18px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease; /* Added transition for border color */
+        }
+
+        /* Button hover effect */
+        .JermboMaze-button:hover {
+            background-color: #342b3d;
+            color: #fff;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -118,6 +138,7 @@
     <a href="gamsim.html" class="gamsim-button">Gam Sim</a> 
     <a href="Flappyreagan.html" class="Flappyreagan-button">Flappy Reagan</a>
     <a href="ClayRoulette.html" class="ClayRoulette-button">Clay Roulette</a>
+    <a href="JermboMaze.html" class="JermboMaze-button">Jermbo Maze</a>
 
     <script>
         function typewriterEffect(elementId, text, speed) {
