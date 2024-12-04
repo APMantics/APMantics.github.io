@@ -8,27 +8,38 @@
     <style>
         /* Centering the content */
         body, html {
-    	    height: 100%;
-    	    margin: 0;
-    	    display: flex;
-    	    flex-direction: column;
-    	    justify-content: center;
-    	    align-items: center;
-    	    font-family: Courier, monospace;
-    	    background: linear-gradient(to top, #16082b 71%, black 50%);
-    	    overflow: hidden; /* Prevent scrolling due to image */
-		    }
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: Courier, monospace;
+            background: linear-gradient(to top, #16082b 71%, black 50%);
+            overflow: hidden; /* Prevent scrolling due to image */
+        }
         
+        /* Background image style */
         .background-image {
-    	    position: absolute;
-   		    top: 0;
-    	    left: 0;
-    	    width: 100%; /* Make it fill the width of the screen */
-    	    height: 29%; /* Make it fill the height of the screen */
-    	    object-fit: cover;
-    	    z-index: 1; /* Send the image behind the content */
-		    }
-       
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 29%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        
+        /* Container for centering content vertically and horizontally */
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2; /* Ensure the container appears above the background */
+        }
+
         /* Style for the typewriter text */
         .typewriter {
             font-size: 24px;
@@ -48,97 +59,44 @@
         }
 
         /* Button style */
-        .gamsim-button {
+        .gamsim-button, .Flappyreagan-button, .ClayRoulette-button, .JermboMaze-button {
             margin-top: 20px;
             padding: 10px 20px;
-            border: 2px solid #fff; /* New border color */
-            border-radius: 50px; /* Circular border */
+            border: 2px solid #fff;
+            border-radius: 50px;
             background-color: #5452b7;
             font-size: 18px;
             cursor: pointer;
             text-decoration: none;
             color: #fff;
-            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease; /* Added transition for border color */
+            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease;
         }
 
         /* Button hover effect */
-        .gamsim-button:hover {
-            background-color: #342b3d;
-            color: #ffffff;
-            transform: scale(1.05);
-        }
-        /* Button style */
-        .Flappyreagan-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            border: 2px solid #fff; /* New border color */
-            border-radius: 50px; /* Circular border */
-            background-color: #5452b7;
-            font-size: 18px;
-            cursor: pointer;
-            text-decoration: none;
-            color: #fff;
-            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease; /* Added transition for border color */
-        }
-
-        /* Button hover effect */
-        .Flappyreagan-button:hover {
+        .gamsim-button:hover, .Flappyreagan-button:hover, .ClayRoulette-button:hover, .JermboMaze-button:hover {
             background-color: #342b3d;
             color: #fff;
             transform: scale(1.05);
         }
 
-        .ClayRoulette-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            border: 2px solid #fff; /* New border color */
-            border-radius: 50px; /* Circular border */
-            background-color: #5452b7;
-            font-size: 18px;
-            cursor: pointer;
-            text-decoration: none;
-            color: #fff;
-            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease; /* Added transition for border color */
-        }
-
-        /* Button hover effect */
-        .ClayRoulette-button:hover {
-            background-color: #342b3d;
-            color: #fff;
-            transform: scale(1.05);
-        }
-
-        .JermboMaze-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            border: 2px solid #fff; /* New border color */
-            border-radius: 50px; /* Circular border */
-            background-color: #5452b7;
-            font-size: 18px;
-            cursor: pointer;
-            text-decoration: none;
-            color: #fff;
-            transition: background-color 0.3s ease, transform 0.2s, border-color 0.3s ease; /* Added transition for border color */
-        }
-
-        /* Button hover effect */
-        .JermboMaze-button:hover {
-            background-color: #342b3d;
-            color: #fff;
-            transform: scale(1.05);
+        /* Optional: Adjust button spacing if needed */
+        .container a {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
 
-    <!-- Typewriter Text -->
-    <div id="typewriter" class="typewriter"></div>
+    <div class="container">
+        <!-- Typewriter Text -->
+        <div id="typewriter" class="typewriter"></div>
 
-    <!-- Game Sim Button -->
-    <a href="gamsim.html" class="gamsim-button">Gam Sim</a> 
-    <a href="Flappyreagan.html" class="Flappyreagan-button">Flappy Reagan</a>
-    <a href="ClayRoulette.html" class="ClayRoulette-button">Clay Roulette</a>
-    <a href="JermboMaze.html" class="JermboMaze-button">Jermbo Maze</a>
+        <!-- Game Sim Buttons -->
+        <a href="gamsim.html" class="gamsim-button">Gam Sim</a> 
+        <a href="Flappyreagan.html" class="Flappyreagan-button">Flappy Reagan</a>
+        <a href="ClayRoulette.html" class="ClayRoulette-button">Clay Roulette</a>
+        <a href="JermboMaze.html" class="JermboMaze-button">Jermbo Maze</a>
+    </div>
 
     <script>
         function typewriterEffect(elementId, text, speed) {
