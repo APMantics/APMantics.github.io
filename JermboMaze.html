@@ -22,8 +22,9 @@ body { margin: 0; overflow: hidden; }
     }
     .warning-text {
         position: fixed;
-        top: 20px;
-        left: 0;
+        top: 50%; /* Changed from 20px to 50% */
+        left: 50%; /* Added left: 50% */
+        transform: translate(-50%, -50%); /* Added transform to center both vertically and horizontally */
         width: 100%;
         text-align: center;
         font-size: 48px;
@@ -44,6 +45,18 @@ body { margin: 0; overflow: hidden; }
         from { opacity: 1; }
         to { opacity: 0; }
     }
+    
+    .red-tint {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 0, 0, 0.2);
+        pointer-events: none;
+        z-index: 999;
+        display: none;
+    }
 </style>
 </head>
 <body>
@@ -54,6 +67,7 @@ body { margin: 0; overflow: hidden; }
     </audio>
     <div class="loading-screen">Loading Maze...</div>
     <div class="warning-text">FAFA IS HERE.</div>
+    <div class="red-tint"></div>
     <div id="game-container"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -81,6 +95,8 @@ body { margin: 0; overflow: hidden; }
         let Glub;
         let BingusTexture;
         let Bingus;
+        let BurganTexture;
+        let Burgan;
         let keySequence = [];
         const konamiCode1 = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
         const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
@@ -151,6 +167,9 @@ body { margin: 0; overflow: hidden; }
             if (Bingus) {
                 updateDirectionForNPC(Bingus);
             }
+            if (Burgan) {
+                updateDirectionForNPC(Burgan);
+            }
         }
 
         function spawnFafaNPC() {
@@ -184,6 +203,10 @@ body { margin: 0; overflow: hidden; }
         }
 
         function resetMaze() {
+            // Remove red tint
+            document.querySelector('.red-tint').style.display = 'none';
+            
+            // Rest of the existing resetMaze function...
             npcClones.forEach(clone => {
                 scene.remove(clone);
             });
@@ -296,6 +319,31 @@ body { margin: 0; overflow: hidden; }
                 if (Bingus) {
                     scene.remove(Bingus);
                     Bingus = null;
+                }
+            }
+
+            if (Math.random() < 0.025) { // 2.5% chance to spawn
+                const BurganGeometry = new THREE.PlaneGeometry(4, 4);
+                const BurganMaterial = new THREE.MeshBasicMaterial({
+                    map: BurganTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                Burgan = new THREE.Mesh(BurganGeometry, BurganMaterial);
+                const randomCell = findRandomEmptyCell();
+                Burgan.position.set(
+                    randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                    2,
+                    randomCell.y * CELL_SIZE + CELL_SIZE/2
+                );
+                Burgan.direction = new THREE.Vector3(1, 0, 0);
+                Burgan.targetRotation = 0;
+                scene.add(Burgan);
+                updateNPCDirection();
+            } else {
+                if (Burgan) {
+                    scene.remove(Burgan);
+                    Burgan = null;
                 }
             }
 
@@ -435,8 +483,9 @@ body { margin: 0; overflow: hidden; }
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/Zh3kvYm/image-31.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/gWJNPdm/image.png', resolve)) // Add Bingus texture
-            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex]) => {
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/gWJNPdm/image.png', resolve)), // Add Bingus texture
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/PQS2HbV/image.png', resolve)) // Add Burgan texture
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, BurganTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
                 floorTexture = floorTex;
@@ -446,6 +495,7 @@ body { margin: 0; overflow: hidden; }
                 GlorpTexture = GlorpTex;
                 GlubTexture = GlubTex;
                 BingusTexture = BingusTex;
+                BurganTexture = BurganTex;
 
                 wallTexture.wrapS = THREE.RepeatWrapping;
                 wallTexture.wrapT = THREE.RepeatWrapping;
@@ -523,6 +573,7 @@ body { margin: 0; overflow: hidden; }
             warningText.style.display = 'block';
             
             spawnFafaNPC();
+            enableRedTint();
             
             // Clear any existing timeout
             if (warningTimeout) {
@@ -534,6 +585,10 @@ body { margin: 0; overflow: hidden; }
                 warningText.style.display = 'none';
                 warningTimeout = null;
             }, 3000);
+        }
+
+        function enableRedTint() {
+            document.querySelector('.red-tint').style.display = 'block';
         }
 
         function updateSpritesToFaceCamera() {
@@ -562,6 +617,11 @@ body { margin: 0; overflow: hidden; }
                 Bingus.lookAt(camera.position);
             }
             
+            // Update Burgan
+            if (Burgan) {
+                Burgan.lookAt(camera.position);
+            }
+            
             // Update decorations
             decorations.forEach(decoration => {
                 decoration.lookAt(camera.position);
@@ -588,6 +648,10 @@ body { margin: 0; overflow: hidden; }
 
             if (Bingus) {
                 updateSingleNPC(Bingus, delta);
+            }
+
+            if (Burgan) {
+                updateSingleNPC(Burgan, delta);
             }
         }
 
@@ -760,6 +824,25 @@ body { margin: 0; overflow: hidden; }
                         const randomAngle = Math.random() * Math.PI * 2;
                         BingusClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
                         BingusClone.targetRotation = Math.atan2(BingusClone.direction.x, BingusClone.direction.z);
+                    }
+                    break;
+                case 'KeyK':
+                    if (BurganTexture) {
+                        const BurganCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const BurganCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: BurganTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const BurganClone = new THREE.Mesh(BurganCloneGeometry, BurganCloneMaterial);
+                        BurganClone.position.copy(camera.position);
+                        BurganClone.direction = new THREE.Vector3(1, 0, 0);
+                        BurganClone.targetRotation = 0;
+                        scene.add(BurganClone);
+                        npcClones.push(BurganClone);
+                        const randomAngle = Math.random() * Math.PI * 2;
+                        BurganClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        BurganClone.targetRotation = Math.atan2(BurganClone.direction.x, BurganClone.direction.z);
                     }
                     break;
             }
