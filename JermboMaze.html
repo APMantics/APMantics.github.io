@@ -52,537 +52,660 @@ body { margin: 0; overflow: hidden; }
       <source src="Deck the Halls - Instrumental.mp3" type="audio/mp3">
       Your browser does not support the audio element.
     </audio>
-  </body>
-<body>
-<div class="loading-screen">Loading Maze...</div>
-<div class="warning-text">FAFA IS HERE.</div>
-<div id="game-container"></div>
+    <div class="loading-screen">Loading Maze...</div>
+    <div class="warning-text">FAFA IS HERE.</div>
+    <div id="game-container"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
-<script>
-let scene, camera, renderer;
-let moveForward = false;
-let moveBackward = false;
-let turnLeft = false;
-let turnRight = false;
-let isSprinting = false;
-let velocity = new THREE.Vector3();
-let rotationVelocity = 0;
-let prevTime = performance.now();
-let wallMeshes = [];
-let npcTexture, chasingTexture;
-let decorationTexture;
-let decorations = [];
-let npcClones = [];
+    <script>
+        let scene, camera, renderer;
+        let moveForward = false;
+        let moveBackward = false;
+        let turnLeft = false;
+        let turnRight = false;
+        let isSprinting = false;
+        let velocity = new THREE.Vector3();
+        let rotationVelocity = 0;
+        let prevTime = performance.now();
+        let wallMeshes = [];
+        let npcTexture, FafaTexture;
+        let decorationTexture;
+        let decorations = [];
+        let npcClones = [];
+        let GlorpTexture;
+        let Glorp;
+        let decorationsEnabled = true; // Toggle for decoration spawning
+        let GlubTexture;
+        let Glub;
 
-const MAZE_SIZE = 25;
-const WALL_HEIGHT = 5;
-const CELL_SIZE = 10;
-const TURN_SPEED = 2;
-const WALK_SPEED = 8;
-const SPRINT_SPEED = 16;
-const COLLISION_THRESHOLD = 2;
-const NPC_PATROL_SPEED = 4;
-const NPC_TURN_SPEED = Math.PI * 2;
+        const MAZE_SIZE = 25;
+        const WALL_HEIGHT = 5;
+        const CELL_SIZE = 10;
+        const TURN_SPEED = 2;
+        const WALK_SPEED = 8;
+        const SPRINT_SPEED = 16;
+        const COLLISION_THRESHOLD = 2;
+        const NPC_PATROL_SPEED = 4;
+        const NPC_TURN_SPEED = Math.PI * 2;
 
-let maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
-let npc;
-let npcDirection = new THREE.Vector3(1, 0, 0);
-let npcTargetRotation = 0;
+        let maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
+        let npc;
+        let npcDirection = new THREE.Vector3(1, 0, 0);
+        let npcTargetRotation = 0;
 
-function generateMaze(x, y) {
-    maze[x][y] = 0;
-    const directions = [
-        [0,2], [2,0], [0,-2], [-2,0],
-        [0,2], [2,0], [0,-2], [-2,0]
-    ];
-    directions.sort(() => Math.random() - 0.5);
-    
-    for(let [dx, dy] of directions) {
-        const nextX = x + dx;
-        const nextY = y + dy;
-        
-        if(nextX > 0 && nextX < MAZE_SIZE-1 && nextY > 0 && nextY < MAZE_SIZE-1 && maze[nextX][nextY] === 1) {
-            if(Math.random() > 0.2) {
-                maze[x + dx/2][y + dy/2] = 0;
-                generateMaze(nextX, nextY);
-            }
-        }
-    }
-}
-
-function findRandomEmptyCell() {
-    let x, y;
-    do {
-        x = Math.floor(Math.random() * (MAZE_SIZE-2)) + 1;
-        y = Math.floor(Math.random() * (MAZE_SIZE-2)) + 1;
-    } while(maze[x][y] === 1);
-    return {x, y};
-}
-
-function updateNPCDirection() {
-    if (!npc) return;
-    
-    const randomAngle = Math.random() * Math.PI * 2;
-    const updateDirectionForNPC = (npcObj) => {
-        npcObj.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-        npcObj.targetRotation = Math.atan2(npcObj.direction.x, npcObj.direction.z);
-    };
-    
-    updateDirectionForNPC(npc);
-    npcClones.forEach(updateDirectionForNPC);
-}
-
-function spawnChasingNPC() {
-    const randomCell = findRandomEmptyCell();
-    const chasingNpcGeometry = new THREE.PlaneGeometry(4, 4);
-    const chasingNpcMaterial = new THREE.MeshBasicMaterial({
-        map: chasingTexture,
-        transparent: true,
-        side: THREE.DoubleSide
-    });
-    const chasingNpc = new THREE.Mesh(chasingNpcGeometry, chasingNpcMaterial);
-    chasingNpc.position.set(
-        randomCell.x * CELL_SIZE + CELL_SIZE/2,
-        2,
-        randomCell.y * CELL_SIZE + CELL_SIZE/2
-    );
-    
-    const randomAngle = Math.random() * Math.PI * 2;
-    chasingNpc.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-    chasingNpc.targetRotation = Math.atan2(chasingNpc.direction.x, chasingNpc.direction.z);
-    chasingNpc.isChasing = true;
-    scene.add(chasingNpc);
-    npcClones.push(chasingNpc);
-}
-
-function resetMaze() {
-    npcClones.forEach(clone => {
-        scene.remove(clone);
-    });
-    npcClones = [];
-    
-    maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
-    generateMaze(1, 1);
-    maze[1][1] = 0;
-    
-    wallMeshes.forEach(wall => scene.remove(wall));
-    wallMeshes = [];
-    
-    const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
-    const wallMaterial = new THREE.MeshStandardMaterial({
-        map: wallTexture,
-        roughness: 0.5,
-        metalness: 0.1
-    });
-    
-    for(let i = 0; i < MAZE_SIZE; i++) {
-        for(let j = 0; j < MAZE_SIZE; j++) {
-            if(maze[i][j] === 1) {
-                const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                wall.position.set(i * CELL_SIZE + CELL_SIZE/2, WALL_HEIGHT/2, j * CELL_SIZE + CELL_SIZE/2);
-                scene.add(wall);
-                wallMeshes.push(wall);
-            }
-        }
-    }
-    
-    camera.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
-    camera.rotation.set(0, 0, 0);
-    
-    const npcCell = findRandomEmptyCell();
-    npc.position.set(npcCell.x * CELL_SIZE + CELL_SIZE/2, 2, npcCell.y * CELL_SIZE + CELL_SIZE/2);
-    npc.direction = new THREE.Vector3(1, 0, 0);
-    npc.targetRotation = 0;
-    updateNPCDirection();
-
-    createDecorations();
-}
-
-function createDecorations() {
-    decorations.forEach(decoration => scene.remove(decoration));
-    decorations = [];
-    
-    for(let i = 0; i < MAZE_SIZE; i++) {
-        for(let j = 0; j < MAZE_SIZE; j++) {
-            if(maze[i][j] === 0 && Math.random() < 0.3) {
-                const decorationGeometry = new THREE.PlaneGeometry(6, 6);
-                const decorationMaterial = new THREE.MeshBasicMaterial({
-                    map: decorationTexture,
-                    transparent: true,
-                    side: THREE.DoubleSide
-                });
-                const decoration = new THREE.Mesh(decorationGeometry, decorationMaterial);
-                
-                const offsetX = (Math.random() - 0.5) * 4;
-                const offsetZ = (Math.random() - 0.5) * 4;
-                
-                decoration.position.set(
-                    i * CELL_SIZE + CELL_SIZE/2 + offsetX,
-                    2,
-                    j * CELL_SIZE + CELL_SIZE/2 + offsetZ
-                );
-                
-                decoration.rotation.y = Math.random() * Math.PI * 2;
-                
-                scene.add(decoration);
-                decorations.push(decoration);
-            }
-        }
-    }
-}
-
-function checkCollision(position) {
-    const gridX = Math.floor(position.x / CELL_SIZE);
-    const gridZ = Math.floor(position.z / CELL_SIZE);
-    
-    if(gridX < 0 || gridX >= MAZE_SIZE || gridZ < 0 || gridZ >= MAZE_SIZE) {
-        return true;
-    }
-    
-    for(let dx = -1; dx <= 1; dx++) {
-        for(let dz = -1; dz <= 1; dz++) {
-            const checkX = gridX + dx;
-            const checkZ = gridZ + dz;
+        function generateMaze(x, y) {
+            maze[x][y] = 0;
+            const directions = [
+                [0,2], [2,0], [0,-2], [-2,0],
+                [0,2], [2,0], [0,-2], [-2,0]
+            ];
+            directions.sort(() => Math.random() - 0.5);
             
-            if(checkX >= 0 && checkX < MAZE_SIZE && 
-               checkZ >= 0 && checkZ < MAZE_SIZE && 
-               maze[checkX][checkZ] === 1) {
+            for(let [dx, dy] of directions) {
+                const nextX = x + dx;
+                const nextY = y + dy;
                 
-                const wallX = (checkX * CELL_SIZE) + (CELL_SIZE/2);
-                const wallZ = (checkZ * CELL_SIZE) + (CELL_SIZE/2);
-                
-                const distance = Math.sqrt(
-                    Math.pow(position.x - wallX, 2) + 
-                    Math.pow(position.z - wallZ, 2)
-                );
-                
-                if(distance < COLLISION_THRESHOLD + CELL_SIZE/2) {
-                    return true;
+                if(nextX > 0 && nextX < MAZE_SIZE-1 && nextY > 0 && nextY < MAZE_SIZE-1 && maze[nextX][nextY] === 1) {
+                    if(Math.random() > 0.2) {
+                        maze[x + dx/2][y + dy/2] = 0;
+                        generateMaze(nextX, nextY);
+                    }
                 }
             }
         }
-    }
-    return false;
-}
 
-let wallTexture, floorTexture, ceilingTexture, doorTexture;
-
-function init() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222);
-    
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
-    
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('game-container').appendChild(renderer.domElement);
-    
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
-
-    const pointLights = [];
-    const lightPositions = [
-        [0.25, 0.25],
-        [0.75, 0.25],
-        [0.25, 0.75],
-        [0.75, 0.75],
-        [0.5, 0.5]
-    ];
-
-    lightPositions.forEach(([x, z]) => {
-        const pointLight = new THREE.PointLight(0xffffff, 0.4, MAZE_SIZE * CELL_SIZE * 1.5);
-        pointLight.position.set(
-            MAZE_SIZE * CELL_SIZE * x,
-            WALL_HEIGHT * 1.5,
-            MAZE_SIZE * CELL_SIZE * z
-        );
-        scene.add(pointLight);
-        pointLights.push(pointLight);
-    });
-
-    const textureLoader = new THREE.TextureLoader();
-    
-    Promise.all([
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/BjjXFsZ/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/L0PQT8z/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/L030VY4/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve))
-    ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, chasingTex, decorTex]) => {
-        npcTexture = npcTex;
-        wallTexture = wallTex;
-        floorTexture = floorTex;
-        ceilingTexture = ceilingTex;
-        chasingTexture = chasingTex;
-        decorationTexture = decorTex;
-
-        wallTexture.wrapS = THREE.RepeatWrapping;
-        wallTexture.wrapT = THREE.RepeatWrapping;
-        wallTexture.repeat.set(1, 1);
-        
-        floorTexture.wrapS = THREE.RepeatWrapping;
-        floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat.set(MAZE_SIZE, MAZE_SIZE);
-        
-        ceilingTexture.wrapS = THREE.RepeatWrapping;
-        ceilingTexture.wrapT = THREE.RepeatWrapping;
-        ceilingTexture.repeat.set(MAZE_SIZE, MAZE_SIZE);
-        
-        const npcGeometry = new THREE.PlaneGeometry(4, 4);
-        const npcMaterial = new THREE.MeshBasicMaterial({
-            map: npcTexture,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-        npc = new THREE.Mesh(npcGeometry, npcMaterial);
-        npc.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
-        npc.direction = new THREE.Vector3(1, 0, 0);
-        npc.targetRotation = 0;
-        scene.add(npc);
-        
-        updateNPCDirection();
-        
-        const ceilingGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
-        const ceilingMaterial = new THREE.MeshStandardMaterial({
-            map: ceilingTexture,
-            side: THREE.DoubleSide,
-            roughness: 0.5,
-            metalness: 0.1
-        });
-        const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
-        ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.set((MAZE_SIZE * CELL_SIZE)/2, WALL_HEIGHT, (MAZE_SIZE * CELL_SIZE)/2);
-        scene.add(ceiling);
-        
-        const floorGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
-        const floorMaterial = new THREE.MeshStandardMaterial({
-            map: floorTexture,
-            roughness: 0.5,
-            metalness: 0.1
-        });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.set((MAZE_SIZE * CELL_SIZE)/2, 0, (MAZE_SIZE * CELL_SIZE)/2);
-        scene.add(floor);
-        
-        const doorGeometry = new THREE.PlaneGeometry(4, 4);
-        const doorMaterial = new THREE.MeshBasicMaterial({
-            map: doorTex,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-        const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE);
-        door.rotation.y = Math.PI / 4;
-        scene.add(door);
-
-        resetMaze();
-        
-        document.querySelector('.loading-screen').style.display = 'none';
-    });
-    
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
-}
-
-function showWarningAndSpawnFafa() {
-    const warningText = document.querySelector('.warning-text');
-    warningText.style.display = 'block';
-    
-    spawnChasingNPC();
-    
-    setTimeout(() => {
-        warningText.style.display = 'none';
-    }, 3000);
-}
-
-function updateNPC(delta) {
-    if (npc) {
-        updateSingleNPC(npc, delta);
-    }
-    
-    npcClones.forEach(clone => {
-        updateSingleNPC(clone, delta);
-    });
-}
-
-function updateSingleNPC(npcObject, delta) {
-    if (!npcObject || !npcObject.direction || typeof npcObject.targetRotation === 'undefined') {
-        return;
-    }
-    
-    const moveAmount = NPC_PATROL_SPEED * delta;
-    
-    if (npcObject.isChasing) {
-        const directionToPlayer = new THREE.Vector3()
-            .subVectors(camera.position, npcObject.position)
-            .normalize();
-        
-        npcObject.direction.copy(directionToPlayer);
-        npcObject.targetRotation = Math.atan2(directionToPlayer.x, directionToPlayer.z);
-        
-        const chasingSpeed = NPC_PATROL_SPEED * 2;
-        const potentialPosition = npcObject.position.clone();
-        potentialPosition.add(directionToPlayer.multiplyScalar(chasingSpeed * delta));
-        
-        if (!checkCollision(potentialPosition)) {
-            npcObject.position.copy(potentialPosition);
+        function findRandomEmptyCell() {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (MAZE_SIZE-2)) + 1;
+                y = Math.floor(Math.random() * (MAZE_SIZE-2)) + 1;
+            } while(maze[x][y] === 1);
+            return {x, y};
         }
-    } else {
-        const potentialPosition = npcObject.position.clone();
-        potentialPosition.add(npcObject.direction.clone().multiplyScalar(moveAmount));
-        
-        if (!checkCollision(potentialPosition)) {
-            npcObject.position.copy(potentialPosition);
-        } else {
+
+        function updateNPCDirection() {
+            if (!npc) return;
+            
             const randomAngle = Math.random() * Math.PI * 2;
-            npcObject.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-            npcObject.targetRotation = Math.atan2(npcObject.direction.x, npcObject.direction.z);
+            const updateDirectionForNPC = (npcObj) => {
+                npcObj.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                npcObj.targetRotation = Math.atan2(npcObj.direction.x, npcObj.direction.z);
+            };
+            
+            updateDirectionForNPC(npc);
+            npcClones.forEach(updateDirectionForNPC);
+            if (Glorp) {
+                updateDirectionForNPC(Glorp);
+            }
+            if (Glub) {
+                updateDirectionForNPC(Glub);
+            }
         }
-    }
-    
-    const currentRotation = npcObject.rotation.y;
-    let rotationDiff = npcObject.targetRotation - currentRotation;
-    
-    while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
-    while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
-    
-    npcObject.rotation.y += Math.sign(rotationDiff) * 
-                           Math.min(Math.abs(rotationDiff), NPC_TURN_SPEED * delta);
-}
 
-function onKeyDown(event) {
-    switch(event.code) {
-        case 'ArrowUp':
-        case 'KeyW':
-            moveForward = true;
-            break;
-        case 'ArrowDown':
-        case 'KeyS':
-            moveBackward = true;
-            break;
-        case 'ArrowLeft':
-        case 'KeyA':
-            turnLeft = true;
-            break;
-        case 'ArrowRight':
-        case 'KeyD':
-            turnRight = true;
-            break;
-        case 'ShiftLeft':
-        case 'ShiftRight':
-            isSprinting = true;
-            break;
-        case 'KeyL':
-            const npcGeometry = new THREE.PlaneGeometry(4, 4);
-            const npcMaterial = new THREE.MeshBasicMaterial({
-                map: npcTexture,
+        function spawnFafaNPC() {
+            const randomCell = findRandomEmptyCell();
+            const FafaNpcGeometry = new THREE.PlaneGeometry(4, 4);
+            const FafaNpcMaterial = new THREE.MeshBasicMaterial({
+                map: FafaTexture,
                 transparent: true,
                 side: THREE.DoubleSide
             });
-            const npcClone = new THREE.Mesh(npcGeometry, npcMaterial);
-            npcClone.position.copy(camera.position);
-            npcClone.direction = new THREE.Vector3(1, 0, 0);
-            npcClone.targetRotation = 0;
-            scene.add(npcClone);
-            npcClones.push(npcClone);
+            const FafaNpc = new THREE.Mesh(FafaNpcGeometry, FafaNpcMaterial);
+            FafaNpc.position.set(
+                randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                2,
+                randomCell.y * CELL_SIZE + CELL_SIZE/2
+            );
+            
             const randomAngle = Math.random() * Math.PI * 2;
-            npcClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-            npcClone.targetRotation = Math.atan2(npcClone.direction.x, npcClone.direction.z);
-            break;
-    }
-}
-
-function onKeyUp(event) {
-    switch(event.code) {
-        case 'ArrowUp':
-        case 'KeyW':
-            moveForward = false;
-            break;
-        case 'ArrowDown':
-        case 'KeyS':
-            moveBackward = false;
-            break;
-        case 'ArrowLeft':
-        case 'KeyA':
-            turnLeft = false;
-            break;
-        case 'ArrowRight':
-        case 'KeyD':
-            turnRight = false;
-            break;
-        case 'ShiftLeft':
-        case 'ShiftRight':
-            isSprinting = false;
-            break;
-    }
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    
-    const time = performance.now();
-    const delta = (time - prevTime) / 1000;
-    
-    if(turnLeft) camera.rotation.y += TURN_SPEED * delta;
-    if(turnRight) camera.rotation.y -= TURN_SPEED * delta;
-    
-    const currentSpeed = isSprinting ? SPRINT_SPEED : WALK_SPEED;
-    const moveDistance = currentSpeed * delta;
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-    
-    const potentialPosition = camera.position.clone();
-    
-    if(moveForward) {
-        potentialPosition.x += direction.x * moveDistance;
-        potentialPosition.z += direction.z * moveDistance;
-    }
-    if(moveBackward) {
-        potentialPosition.x -= direction.x * moveDistance;
-        potentialPosition.z -= direction.z * moveDistance;
-    }
-    
-    if(!checkCollision(potentialPosition)) {
-        camera.position.copy(potentialPosition);
-    }
-    
-    updateNPC(delta);
-    
-    const distance = camera.position.distanceTo(
-        new THREE.Vector3((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE)
-    );
-    if(distance < 3) {
-        if (Math.random() < 0.001) {
-            showWarningAndSpawnFafa();
+            FafaNpc.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+            FafaNpc.targetRotation = Math.atan2(FafaNpc.direction.x, FafaNpc.direction.z);
+            FafaNpc.isFafa = true;
+            scene.add(FafaNpc);
+            npcClones.push(FafaNpc);
         }
-        resetMaze();
-    }
-    
-    prevTime = time;
-    renderer.render(scene, camera);
-}
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+        function resetMaze() {
+            npcClones.forEach(clone => {
+                scene.remove(clone);
+            });
+            npcClones = [];
+            
+            maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
+            generateMaze(1, 1);
+            maze[1][1] = 0;
+            
+            wallMeshes.forEach(wall => scene.remove(wall));
+            wallMeshes = [];
+            
+            const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                map: wallTexture,
+                roughness: 0.5,
+                metalness: 0.1
+            });
+            
+            for(let i = 0; i < MAZE_SIZE; i++) {
+                for(let j = 0; j < MAZE_SIZE; j++) {
+                    if(maze[i][j] === 1) {
+                        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wall.position.set(i * CELL_SIZE + CELL_SIZE/2, WALL_HEIGHT/2, j * CELL_SIZE + CELL_SIZE/2);
+                        scene.add(wall);
+                        wallMeshes.push(wall);
+                    }
+                }
+            }
+            
+            camera.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
+            camera.rotation.set(0, 0, 0);
+            
+            const npcCell = findRandomEmptyCell();
+            npc.position.set(npcCell.x * CELL_SIZE + CELL_SIZE/2, 2, npcCell.y * CELL_SIZE + CELL_SIZE/2);
+            npc.direction = new THREE.Vector3(1, 0, 0);
+            npc.targetRotation = 0;
+            updateNPCDirection();
 
-window.addEventListener('resize', onWindowResize, false);
+            if (Math.random() < 0.6) { // 60% chance to spawn
+                const GlorpGeometry = new THREE.PlaneGeometry(4, 4);
+                const GlorpMaterial = new THREE.MeshBasicMaterial({
+                    map: GlorpTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                Glorp = new THREE.Mesh(GlorpGeometry, GlorpMaterial);
+                const randomCell = findRandomEmptyCell();
+                Glorp.position.set(
+                    randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                    2,
+                    randomCell.y * CELL_SIZE + CELL_SIZE/2
+                );
+                Glorp.direction = new THREE.Vector3(1, 0, 0);
+                Glorp.targetRotation = 0;
+                scene.add(Glorp);
+                updateNPCDirection();
+            } else {
+                if (Glorp) {
+                    scene.remove(Glorp);
+                    Glorp = null;
+                }
+            }
 
-init();
-animate();
-</script>
+            if (Math.random() < 0.2) { // 20% chance to spawn
+                const GlubGeometry = new THREE.PlaneGeometry(4, 4);
+                const GlubMaterial = new THREE.MeshBasicMaterial({
+                    map: GlubTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                Glub = new THREE.Mesh(GlubGeometry, GlubMaterial);
+                const randomCell = findRandomEmptyCell();
+                Glub.position.set(
+                    randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                    2,
+                    randomCell.y * CELL_SIZE + CELL_SIZE/2
+                );
+                Glub.direction = new THREE.Vector3(1, 0, 0);
+                Glub.targetRotation = 0;
+                scene.add(Glub);
+                updateNPCDirection();
+            } else {
+                if (Glub) {
+                    scene.remove(Glub);
+                    Glub = null;
+                }
+            }
+
+            createDecorations();
+        }
+
+        function createDecorations() {
+            // If decorations are disabled, clear existing ones and return
+            if (!decorationsEnabled) {
+                decorations.forEach(decoration => scene.remove(decoration));
+                decorations = [];
+                return;
+            }
+            
+            decorations.forEach(decoration => scene.remove(decoration));
+            decorations = [];
+            
+            for(let i = 0; i < MAZE_SIZE; i++) {
+                for(let j = 0; j < MAZE_SIZE; j++) {
+                    if(maze[i][j] === 0 && Math.random() < 0.4) { // Changed from 0.3 to 0.4
+                        const decorationGeometry = new THREE.PlaneGeometry(6, 6);
+                        const decorationMaterial = new THREE.MeshBasicMaterial({
+                            map: decorationTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const decoration = new THREE.Mesh(decorationGeometry, decorationMaterial);
+                        
+                        const offsetX = (Math.random() - 0.5) * 4;
+                        const offsetZ = (Math.random() - 0.5) * 4;
+                        
+                        decoration.position.set(
+                            i * CELL_SIZE + CELL_SIZE/2 + offsetX,
+                            2,
+                            j * CELL_SIZE + CELL_SIZE/2 + offsetZ
+                        );
+                        
+                        decoration.rotation.y = Math.random() * Math.PI * 2;
+                        
+                        scene.add(decoration);
+                        decorations.push(decoration);
+                    }
+                }
+            }
+        }
+
+        function checkCollision(position) {
+            const gridX = Math.floor(position.x / CELL_SIZE);
+            const gridZ = Math.floor(position.z / CELL_SIZE);
+            
+            if(gridX < 0 || gridX >= MAZE_SIZE || gridZ < 0 || gridZ >= MAZE_SIZE) {
+                return true;
+            }
+            
+            for(let dx = -1; dx <= 1; dx++) {
+                for(let dz = -1; dz <= 1; dz++) {
+                    const checkX = gridX + dx;
+                    const checkZ = gridZ + dz;
+                    
+                    if(checkX >= 0 && checkX < MAZE_SIZE && 
+                       checkZ >= 0 && checkZ < MAZE_SIZE && 
+                       maze[checkX][checkZ] === 1) {
+                        
+                        const wallX = (checkX * CELL_SIZE) + (CELL_SIZE/2);
+                        const wallZ = (checkZ * CELL_SIZE) + (CELL_SIZE/2);
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(position.x - wallX, 2) + 
+                            Math.pow(position.z - wallZ, 2)
+                        );
+                        
+                        if(distance < COLLISION_THRESHOLD + CELL_SIZE/2) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        let wallTexture, floorTexture, ceilingTexture, doorTexture;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x222222);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
+            
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('game-container').appendChild(renderer.domElement);
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            const pointLights = [];
+            const lightPositions = [
+                [0.25, 0.25],
+                [0.75, 0.25],
+                [0.25, 0.75],
+                [0.75, 0.75],
+                [0.5, 0.5]
+            ];
+
+            lightPositions.forEach(([x, z]) => {
+                const pointLight = new THREE.PointLight(0xffffff, 0.4, MAZE_SIZE * CELL_SIZE * 1.5);
+                pointLight.position.set(
+                    MAZE_SIZE * CELL_SIZE * x,
+                    WALL_HEIGHT * 1.5,
+                    MAZE_SIZE * CELL_SIZE * z
+                );
+                scene.add(pointLight);
+                pointLights.push(pointLight);
+            });
+
+            const textureLoader = new THREE.TextureLoader();
+            
+            Promise.all([
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/BjjXFsZ/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/L0PQT8z/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/L030VY4/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/Zh3kvYm/image-31.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve))
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex]) => {
+                npcTexture = npcTex;
+                wallTexture = wallTex;
+                floorTexture = floorTex;
+                ceilingTexture = ceilingTex;
+                FafaTexture = FafaTex;
+                decorationTexture = decorTex;
+                GlorpTexture = GlorpTex;
+                GlubTexture = GlubTex;
+
+                wallTexture.wrapS = THREE.RepeatWrapping;
+                wallTexture.wrapT = THREE.RepeatWrapping;
+                wallTexture.repeat.set(1, 1);
+                
+                floorTexture.wrapS = THREE.RepeatWrapping;
+                floorTexture.wrapT = THREE.RepeatWrapping;
+                floorTexture.repeat.set(MAZE_SIZE, MAZE_SIZE);
+                
+                ceilingTexture.wrapS = THREE.RepeatWrapping;
+                ceilingTexture.wrapT = THREE.RepeatWrapping;
+                ceilingTexture.repeat.set(MAZE_SIZE, MAZE_SIZE);
+                
+                const npcGeometry = new THREE.PlaneGeometry(4, 4);
+                const npcMaterial = new THREE.MeshBasicMaterial({
+                    map: npcTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                npc = new THREE.Mesh(npcGeometry, npcMaterial);
+                npc.position.set(CELL_SIZE * 1.5, 2, CELL_SIZE * 1.5);
+                npc.direction = new THREE.Vector3(1, 0, 0);
+                npc.targetRotation = 0;
+                scene.add(npc);
+                
+                updateNPCDirection();
+                
+                const ceilingGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
+                const ceilingMaterial = new THREE.MeshStandardMaterial({
+                    map: ceilingTexture,
+                    side: THREE.DoubleSide,
+                    roughness: 0.5,
+                    metalness: 0.1
+                });
+                const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+                ceiling.rotation.x = Math.PI / 2;
+                ceiling.position.set((MAZE_SIZE * CELL_SIZE)/2, WALL_HEIGHT, (MAZE_SIZE * CELL_SIZE)/2);
+                scene.add(ceiling);
+                
+                const floorGeometry = new THREE.PlaneGeometry(MAZE_SIZE * CELL_SIZE, MAZE_SIZE * CELL_SIZE);
+                const floorMaterial = new THREE.MeshStandardMaterial({
+                    map: floorTexture,
+                    roughness: 0.5,
+                    metalness: 0.1
+                });
+                const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+                floor.rotation.x = -Math.PI / 2;
+                floor.position.set((MAZE_SIZE * CELL_SIZE)/2, 0, (MAZE_SIZE * CELL_SIZE)/2);
+                scene.add(floor);
+                
+                const doorGeometry = new THREE.PlaneGeometry(4, 4);
+                const doorMaterial = new THREE.MeshBasicMaterial({
+                    map: doorTex,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                const door = new THREE.Mesh(doorGeometry, doorMaterial);
+                door.position.set((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE);
+                door.rotation.y = Math.PI / 4;
+                scene.add(door);
+
+                resetMaze();
+                
+                document.querySelector('.loading-screen').style.display = 'none';
+            });
+            
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+        }
+
+        function showWarningAndSpawnFafa() {
+            const warningText = document.querySelector('.warning-text');
+            warningText.style.display = 'block';
+            
+            spawnFafaNPC();
+            
+            setTimeout(() => {
+                warningText.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateNPC(delta) {
+            if (npc) {
+                updateSingleNPC(npc, delta);
+            }
+            
+            npcClones.forEach(clone => {
+                updateSingleNPC(clone, delta);
+            });
+
+            if (Glorp) {
+                updateSingleNPC(Glorp, delta);
+            }
+
+            if (Glub) {
+                updateSingleNPC(Glub, delta);
+            }
+        }
+
+        function updateSingleNPC(npcObject, delta) {
+            if (!npcObject || !npcObject.direction || typeof npcObject.targetRotation === 'undefined') {
+                return;
+            }
+            
+            const moveAmount = NPC_PATROL_SPEED * delta;
+            
+            if (npcObject.isFafa) {
+                const directionToPlayer = new THREE.Vector3()
+                    .subVectors(camera.position, npcObject.position)
+                    .normalize();
+                
+                npcObject.direction.copy(directionToPlayer);
+                npcObject.targetRotation = Math.atan2(directionToPlayer.x, directionToPlayer.z);
+                
+                const FafaSpeed = NPC_PATROL_SPEED * 2;
+                const potentialPosition = npcObject.position.clone();
+                potentialPosition.add(directionToPlayer.multiplyScalar(FafaSpeed * delta));
+                
+                if (!checkCollision(potentialPosition)) {
+                    npcObject.position.copy(potentialPosition);
+                }
+            } else {
+                const potentialPosition = npcObject.position.clone();
+                potentialPosition.add(npcObject.direction.clone().multiplyScalar(moveAmount));
+                
+                if (!checkCollision(potentialPosition)) {
+                    npcObject.position.copy(potentialPosition);
+                } else {
+                    const randomAngle = Math.random() * Math.PI * 2;
+                    npcObject.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                    npcObject.targetRotation = Math.atan2(npcObject.direction.x, npcObject.direction.z);
+                }
+            }
+            
+            const currentRotation = npcObject.rotation.y;
+            let rotationDiff = npcObject.targetRotation - currentRotation;
+            
+            while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
+            while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
+            
+            npcObject.rotation.y += Math.sign(rotationDiff) * 
+                               Math.min(Math.abs(rotationDiff), NPC_TURN_SPEED * delta);
+        }
+
+        function onKeyDown(event) {
+            switch(event.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                    moveForward = true;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    moveBackward = true;
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                    turnLeft = true;
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    turnRight = true;
+                    break;
+                case 'ShiftLeft':
+                case 'ShiftRight':
+                    isSprinting = true;
+                    break;
+                case 'KeyI':
+                    if (Glorp) {
+                        camera.position.copy(Glorp.position);
+                    }
+                    break;
+                case 'KeyG':
+                    if (GlorpTexture) {
+                        const GlorpCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const GlorpCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: GlorpTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const GlorpClone = new THREE.Mesh(GlorpCloneGeometry, GlorpCloneMaterial);
+                        GlorpClone.position.copy(camera.position);
+                        GlorpClone.direction = new THREE.Vector3(1, 0, 0);
+                        GlorpClone.targetRotation = 0;
+                        scene.add(GlorpClone);
+                        npcClones.push(GlorpClone);
+                        const randomAngle = Math.random() * Math.PI * 2;
+                        GlorpClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        GlorpClone.targetRotation = Math.atan2(GlorpClone.direction.x, GlorpClone.direction.z);
+                    }
+                    break;
+                case 'KeyL':
+                    const npcGeometry = new THREE.PlaneGeometry(4, 4);
+                    const npcMaterial = new THREE.MeshBasicMaterial({
+                        map: npcTexture,
+                        transparent: true,
+                        side: THREE.DoubleSide
+                    });
+                    const npcClone = new THREE.Mesh(npcGeometry, npcMaterial);
+                    npcClone.position.copy(camera.position);
+                    npcClone.direction = new THREE.Vector3(1, 0, 0);
+                    npcClone.targetRotation = 0;
+                    scene.add(npcClone);
+                    npcClones.push(npcClone);
+                    
+                    // Add proper direction initialization
+                    const randomAngle = Math.random() * Math.PI * 2;
+                    npcClone.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                    npcClone.targetRotation = Math.atan2(npcClone.direction.x, npcClone.direction.z);
+                    break;
+                case 'KeyJ':
+                    if (GlubTexture) {
+                        const GlubCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const GlubCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: GlubTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const GlubClone = new THREE.Mesh(GlubCloneGeometry, GlubCloneMaterial);
+                        GlubClone.position.copy(camera.position);
+                        GlubClone.direction = new THREE.Vector3(1, 0, 0);
+                        GlubClone.targetRotation = 0;
+                        scene.add(GlubClone);
+                        npcClones.push(GlubClone);
+                        const randomAngle = Math.random() * Math.PI * 2;
+                        GlubClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        GlubClone.targetRotation = Math.atan2(GlubClone.direction.x, GlubClone.direction.z);
+                    }
+                    break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch(event.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                    moveForward = false;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    moveBackward = false;
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                    turnLeft = false;
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    turnRight = false;
+                    break;
+                case 'ShiftLeft':
+                case 'ShiftRight':
+                    isSprinting = false;
+                    break;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+            
+            if(turnLeft) camera.rotation.y += TURN_SPEED * delta;
+            if(turnRight) camera.rotation.y -= TURN_SPEED * delta;
+            
+            const currentSpeed = isSprinting ? SPRINT_SPEED : WALK_SPEED;
+            const moveDistance = currentSpeed * delta;
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            
+            const potentialPosition = camera.position.clone();
+            
+            if(moveForward) {
+                potentialPosition.x += direction.x * moveDistance;
+                potentialPosition.z += direction.z * moveDistance;
+            }
+            if(moveBackward) {
+                potentialPosition.x -= direction.x * moveDistance;
+                potentialPosition.z -= direction.z * moveDistance;
+            }
+            
+            if(!checkCollision(potentialPosition)) {
+                camera.position.copy(potentialPosition);
+            }
+            
+            updateNPC(delta);
+            
+            const distance = camera.position.distanceTo(
+                new THREE.Vector3((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE)
+            );
+            if(distance < 3) {
+                if (Math.random() < 0.001) {
+                    showWarningAndSpawnFafa();
+                }
+                resetMaze();
+            }
+            
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        init();
+        animate();
+    </script>
 </body>
 </html>
