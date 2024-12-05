@@ -79,6 +79,8 @@ body { margin: 0; overflow: hidden; }
         let decorationsEnabled = true; // Toggle for decoration spawning
         let GlubTexture;
         let Glub;
+        let BingusTexture;
+        let Bingus;
         let keySequence = [];
         const konamiCode1 = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
         const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
@@ -133,6 +135,7 @@ body { margin: 0; overflow: hidden; }
             
             const randomAngle = Math.random() * Math.PI * 2;
             const updateDirectionForNPC = (npcObj) => {
+                if (!npcObj) return; // Add this check
                 npcObj.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
                 npcObj.targetRotation = Math.atan2(npcObj.direction.x, npcObj.direction.z);
             };
@@ -144,6 +147,9 @@ body { margin: 0; overflow: hidden; }
             }
             if (Glub) {
                 updateDirectionForNPC(Glub);
+            }
+            if (Bingus) {
+                updateDirectionForNPC(Bingus);
             }
         }
 
@@ -231,10 +237,11 @@ body { margin: 0; overflow: hidden; }
                     2,
                     randomCell.y * CELL_SIZE + CELL_SIZE/2
                 );
-                Glorp.direction = new THREE.Vector3(1, 0, 0);
-                Glorp.targetRotation = 0;
+                // Initialize direction and targetRotation properly
+                const randomAngle = Math.random() * Math.PI * 2;
+                Glorp.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                Glorp.targetRotation = Math.atan2(Glorp.direction.x, Glorp.direction.z);
                 scene.add(Glorp);
-                updateNPCDirection();
             } else {
                 if (Glorp) {
                     scene.remove(Glorp);
@@ -264,6 +271,31 @@ body { margin: 0; overflow: hidden; }
                 if (Glub) {
                     scene.remove(Glub);
                     Glub = null;
+                }
+            }
+
+            if (Math.random() < 0.45) { // 45% chance to spawn
+                const BingusGeometry = new THREE.PlaneGeometry(4, 4);
+                const BingusMaterial = new THREE.MeshBasicMaterial({
+                    map: BingusTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                Bingus = new THREE.Mesh(BingusGeometry, BingusMaterial);
+                const randomCell = findRandomEmptyCell();
+                Bingus.position.set(
+                    randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                    2,
+                    randomCell.y * CELL_SIZE + CELL_SIZE/2
+                );
+                Bingus.direction = new THREE.Vector3(1, 0, 0);
+                Bingus.targetRotation = 0;
+                scene.add(Bingus);
+                updateNPCDirection();
+            } else {
+                if (Bingus) {
+                    scene.remove(Bingus);
+                    Bingus = null;
                 }
             }
 
@@ -395,8 +427,9 @@ body { margin: 0; overflow: hidden; }
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/0nNCrZ0/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/Zh3kvYm/image-31.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve))
-            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex]) => {
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/gWJNPdm/image.png', resolve)) // Add Bingus texture
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
                 floorTexture = floorTex;
@@ -405,6 +438,7 @@ body { margin: 0; overflow: hidden; }
                 decorationTexture = decorTex;
                 GlorpTexture = GlorpTex;
                 GlubTexture = GlubTex;
+                BingusTexture = BingusTex;
 
                 wallTexture.wrapS = THREE.RepeatWrapping;
                 wallTexture.wrapT = THREE.RepeatWrapping;
@@ -475,7 +509,6 @@ body { margin: 0; overflow: hidden; }
             document.addEventListener('keyup', onKeyUp);
         }
 
-        // Add this function after init()
         function updateSpritesToFaceCamera() {
             // Update NPCs
             if (npc) {
@@ -495,6 +528,11 @@ body { margin: 0; overflow: hidden; }
             // Update Glub (previously Catfish)
             if (Glub) {
                 Glub.lookAt(camera.position);
+            }
+            
+            // Update Bingus
+            if (Bingus) {
+                Bingus.lookAt(camera.position);
             }
             
             // Update decorations
@@ -523,12 +561,17 @@ body { margin: 0; overflow: hidden; }
                 updateSingleNPC(clone, delta);
             });
 
-            if (Glorp) {
+            // Add explicit check for Glorp
+            if (Glorp && Glorp.direction && Glorp.targetRotation !== undefined) {
                 updateSingleNPC(Glorp, delta);
             }
 
             if (Glub) {
                 updateSingleNPC(Glub, delta);
+            }
+
+            if (Bingus) {
+                updateSingleNPC(Bingus, delta);
             }
         }
 
@@ -684,6 +727,25 @@ body { margin: 0; overflow: hidden; }
                         GlubClone.targetRotation = Math.atan2(GlubClone.direction.x, GlubClone.direction.z);
                     }
                     break;
+                case 'KeyH':
+                    if (BingusTexture) {
+                        const BingusCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const BingusCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: BingusTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const BingusClone = new THREE.Mesh(BingusCloneGeometry, BingusCloneMaterial);
+                        BingusClone.position.copy(camera.position);
+                        BingusClone.direction = new THREE.Vector3(1, 0, 0);
+                        BingusClone.targetRotation = 0;
+                        scene.add(BingusClone);
+                        npcClones.push(BingusClone);
+                        const randomAngle = Math.random() * Math.PI * 2;
+                        BingusClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        BingusClone.targetRotation = Math.atan2(BingusClone.direction.x, BingusClone.direction.z);
+                    }
+                    break;
             }
         }
 
@@ -748,9 +810,6 @@ body { margin: 0; overflow: hidden; }
                 new THREE.Vector3((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE)
             );
             if(distance < 3) {
-                if (Math.random() < 0.001) {
-                    showWarningAndSpawnFafa();
-                }
                 resetMaze();
             }
             
