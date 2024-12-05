@@ -79,6 +79,9 @@ body { margin: 0; overflow: hidden; }
         let decorationsEnabled = true; // Toggle for decoration spawning
         let GlubTexture;
         let Glub;
+        let keySequence = [];
+        const konamiCode1 = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
+        const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
 
         const MAZE_SIZE = 25;
         const WALL_HEIGHT = 5;
@@ -150,7 +153,8 @@ body { margin: 0; overflow: hidden; }
             const FafaNpcMaterial = new THREE.MeshBasicMaterial({
                 map: FafaTexture,
                 transparent: true,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                depthTest: false // This makes Fafa visible through all objects
             });
             const FafaNpc = new THREE.Mesh(FafaNpcGeometry, FafaNpcMaterial);
             FafaNpc.position.set(
@@ -163,8 +167,14 @@ body { margin: 0; overflow: hidden; }
             FafaNpc.direction = new THREE.Vector3(Math.cos(randomAngle), 0, Math.sin(randomAngle));
             FafaNpc.targetRotation = Math.atan2(FafaNpc.direction.x, FafaNpc.direction.z);
             FafaNpc.isFafa = true;
+            FafaNpc.isKonamiFafa = true;
+            FafaNpc.renderOrder = 999; // This ensures Fafa renders on top of other objects
             scene.add(FafaNpc);
             npcClones.push(FafaNpc);
+        }
+
+        function checkKonamiCode(code) {
+            return code.every((key, index) => keySequence[keySequence.length - code.length + index] === key);
         }
 
         function resetMaze() {
@@ -382,7 +392,7 @@ body { margin: 0; overflow: hidden; }
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/L030VY4/image.png', resolve)),
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/0nNCrZ0/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/Zh3kvYm/image-31.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve))
@@ -541,7 +551,16 @@ body { margin: 0; overflow: hidden; }
                 const potentialPosition = npcObject.position.clone();
                 potentialPosition.add(directionToPlayer.multiplyScalar(FafaSpeed * delta));
                 
-                if (!checkCollision(potentialPosition)) {
+                // If this is a Konami code Fafa, ignore collisions
+                if (npcObject.isKonamiFafa) {
+                    npcObject.position.copy(potentialPosition);
+                    
+                    // Check if Fafa caught the player
+                    const distanceToPlayer = npcObject.position.distanceTo(camera.position);
+                    if (distanceToPlayer < 2) { // If Fafa is within 2 units of the player
+                        resetMaze();
+                    }
+                } else if (!checkCollision(potentialPosition)) {
                     npcObject.position.copy(potentialPosition);
                 }
             } else {
@@ -568,6 +587,20 @@ body { margin: 0; overflow: hidden; }
         }
 
         function onKeyDown(event) {
+            // Add the current key to the sequence
+            keySequence.push(event.code);
+            
+            // Keep only the last 8 keys
+            if (keySequence.length > 8) {
+                keySequence = keySequence.slice(-8);
+            }
+            
+            // Check for either sequence
+            if (checkKonamiCode(konamiCode1) || checkKonamiCode(konamiCode2)) {
+                showWarningAndSpawnFafa();
+                keySequence = []; // Reset the sequence
+            }
+
             switch(event.code) {
                 case 'ArrowUp':
                 case 'KeyW':
