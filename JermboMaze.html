@@ -346,10 +346,15 @@ body { margin: 0; overflow: hidden; }
             const gridX = Math.floor(position.x / CELL_SIZE);
             const gridZ = Math.floor(position.z / CELL_SIZE);
             
+            // Add a small buffer to prevent getting too close to walls
+            const WALL_BUFFER = 1.0;
+            
+            // Check immediate grid position bounds
             if(gridX < 0 || gridX >= MAZE_SIZE || gridZ < 0 || gridZ >= MAZE_SIZE) {
                 return true;
             }
             
+            // Check surrounding cells with more precise distance calculations
             for(let dx = -1; dx <= 1; dx++) {
                 for(let dz = -1; dz <= 1; dz++) {
                     const checkX = gridX + dx;
@@ -359,15 +364,17 @@ body { margin: 0; overflow: hidden; }
                        checkZ >= 0 && checkZ < MAZE_SIZE && 
                        maze[checkX][checkZ] === 1) {
                         
+                        // Calculate wall center position
                         const wallX = (checkX * CELL_SIZE) + (CELL_SIZE/2);
                         const wallZ = (checkZ * CELL_SIZE) + (CELL_SIZE/2);
                         
-                        const distance = Math.sqrt(
-                            Math.pow(position.x - wallX, 2) + 
-                            Math.pow(position.z - wallZ, 2)
-                        );
+                        // Calculate distance from player to wall center
+                        const distX = Math.abs(position.x - wallX);
+                        const distZ = Math.abs(position.z - wallZ);
                         
-                        if(distance < COLLISION_THRESHOLD + CELL_SIZE/2) {
+                        // If we're too close to a wall in either direction
+                        if(distX < (CELL_SIZE/2 + WALL_BUFFER) && 
+                           distZ < (CELL_SIZE/2 + WALL_BUFFER)) {
                             return true;
                         }
                     }
@@ -797,19 +804,36 @@ body { margin: 0; overflow: hidden; }
             const direction = new THREE.Vector3();
             camera.getWorldDirection(direction);
             
+            // Try moving on X and Z axes separately
             const potentialPosition = camera.position.clone();
             
-            if(moveForward) {
-                potentialPosition.x += direction.x * moveDistance;
-                potentialPosition.z += direction.z * moveDistance;
-            }
-            if(moveBackward) {
-                potentialPosition.x -= direction.x * moveDistance;
-                potentialPosition.z -= direction.z * moveDistance;
-            }
-            
-            if(!checkCollision(potentialPosition)) {
-                camera.position.copy(potentialPosition);
+            if(moveForward || moveBackward) {
+                const moveMultiplier = moveForward ? 1 : -1;
+                
+                // Try X movement
+                const tryX = camera.position.clone();
+                tryX.x += direction.x * moveDistance * moveMultiplier;
+                
+                // Try Z movement
+                const tryZ = camera.position.clone();
+                tryZ.z += direction.z * moveDistance * moveMultiplier;
+                
+                // Check which movements are valid
+                const canMoveX = !checkCollision(tryX);
+                const canMoveZ = !checkCollision(tryZ);
+                
+                // Apply valid movements
+                if(canMoveX) {
+                    potentialPosition.x = tryX.x;
+                }
+                if(canMoveZ) {
+                    potentialPosition.z = tryZ.z;
+                }
+                
+                // Only update position if at least one movement was valid
+                if(canMoveX || canMoveZ) {
+                    camera.position.copy(potentialPosition);
+                }
             }
             
             updateNPC(delta);
