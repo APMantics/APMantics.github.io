@@ -509,6 +509,26 @@ body { margin: 0; overflow: hidden; }
             document.addEventListener('keyup', onKeyUp);
         }
 
+        let warningTimeout;
+
+        function showWarningAndSpawnFafa() {
+            const warningText = document.querySelector('.warning-text');
+            warningText.style.display = 'block';
+            
+            spawnFafaNPC();
+            
+            // Clear any existing timeout
+            if (warningTimeout) {
+                clearTimeout(warningTimeout);
+            }
+            
+            // Set new timeout and store the reference
+            warningTimeout = setTimeout(() => {
+                warningText.style.display = 'none';
+                warningTimeout = null;
+            }, 3000);
+        }
+
         function updateSpritesToFaceCamera() {
             // Update NPCs
             if (npc) {
@@ -539,17 +559,6 @@ body { margin: 0; overflow: hidden; }
             decorations.forEach(decoration => {
                 decoration.lookAt(camera.position);
             });
-        }
-
-        function showWarningAndSpawnFafa() {
-            const warningText = document.querySelector('.warning-text');
-            warningText.style.display = 'block';
-            
-            spawnFafaNPC();
-            
-            setTimeout(() => {
-                warningText.style.display = 'none';
-            }, 3000);
         }
 
         function updateNPC(delta) {
