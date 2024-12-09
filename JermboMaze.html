@@ -22,9 +22,9 @@ body { margin: 0; overflow: hidden; }
     }
     .warning-text {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        top: 50%; /* Changed from 20px to 50% */
+        left: 50%; /* Added left: 50% */
+        transform: translate(-50%, -50%); /* Added transform to center both vertically and horizontally */
         width: 100%;
         text-align: center;
         font-size: 48px;
@@ -203,7 +203,7 @@ body { margin: 0; overflow: hidden; }
         }
 
         function resetMaze() {
-            // Remove red tint FIRST before doing anything else
+            // Remove red tint
             document.querySelector('.red-tint').style.display = 'none';
             
             // Rest of the existing resetMaze function...
@@ -681,8 +681,6 @@ body { margin: 0; overflow: hidden; }
                     // Check if Fafa caught the player
                     const distanceToPlayer = npcObject.position.distanceTo(camera.position);
                     if (distanceToPlayer < 2) { // If Fafa is within 2 units of the player
-                        // Remove red tint immediately before resetting maze
-                        document.querySelector('.red-tint').style.display = 'none';
                         resetMaze();
                     }
                 } else if (!checkCollision(potentialPosition)) {
@@ -928,8 +926,6 @@ body { margin: 0; overflow: hidden; }
                 new THREE.Vector3((MAZE_SIZE-1.5) * CELL_SIZE, 2, (MAZE_SIZE-1.5) * CELL_SIZE)
             );
             if(distance < 3) {
-                // Remove red tint immediately before resetting maze
-                document.querySelector('.red-tint').style.display = 'none';
                 resetMaze();
             }
             
