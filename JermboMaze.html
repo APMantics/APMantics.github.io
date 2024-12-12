@@ -95,8 +95,8 @@ body { margin: 0; overflow: hidden; }
         let Glub;
         let BingusTexture;
         let Bingus;
-        let BurganTexture;
-        let Burgan;
+        let OiiaTexture;
+        let Oiia;
         let keySequence = [];
         const konamiCode1 = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
         const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
@@ -167,8 +167,8 @@ body { margin: 0; overflow: hidden; }
             if (Bingus) {
                 updateDirectionForNPC(Bingus);
             }
-            if (Burgan) {
-                updateDirectionForNPC(Burgan);
+            if (Oiia) {
+                updateDirectionForNPC(Oiia);
             }
         }
 
@@ -323,27 +323,27 @@ body { margin: 0; overflow: hidden; }
             }
 
             if (Math.random() < 0.025) { // 2.5% chance to spawn
-                const BurganGeometry = new THREE.PlaneGeometry(4, 4);
-                const BurganMaterial = new THREE.MeshBasicMaterial({
-                    map: BurganTexture,
+                const OiiaGeometry = new THREE.PlaneGeometry(4, 4);
+                const OiiaMaterial = new THREE.MeshBasicMaterial({
+                    map: OiiaTexture,
                     transparent: true,
                     side: THREE.DoubleSide
                 });
-                Burgan = new THREE.Mesh(BurganGeometry, BurganMaterial);
+                Oiia = new THREE.Mesh(OiiaGeometry, OiiaMaterial);
                 const randomCell = findRandomEmptyCell();
-                Burgan.position.set(
+                Oiia.position.set(
                     randomCell.x * CELL_SIZE + CELL_SIZE/2,
                     2,
                     randomCell.y * CELL_SIZE + CELL_SIZE/2
                 );
-                Burgan.direction = new THREE.Vector3(1, 0, 0);
-                Burgan.targetRotation = 0;
-                scene.add(Burgan);
+                Oiia.direction = new THREE.Vector3(1, 0, 0);
+                Oiia.targetRotation = 0;
+                scene.add(Oiia);
                 updateNPCDirection();
             } else {
-                if (Burgan) {
-                    scene.remove(Burgan);
-                    Burgan = null;
+                if (Oiia) {
+                    scene.remove(Oiia);
+                    Oiia = null;
                 }
             }
 
@@ -484,8 +484,8 @@ body { margin: 0; overflow: hidden; }
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/Zh3kvYm/image-31.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/C2fy98Q/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/gWJNPdm/image.png', resolve)), // Add Bingus texture
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/PQS2HbV/image.png', resolve)) // Add Burgan texture
-            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, BurganTex]) => {
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/Z2g8pjt/OIIAOIIACat-TSV2-crop.gif', resolve)) // Add Oiia texture
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, OiiaTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
                 floorTexture = floorTex;
@@ -495,7 +495,7 @@ body { margin: 0; overflow: hidden; }
                 GlorpTexture = GlorpTex;
                 GlubTexture = GlubTex;
                 BingusTexture = BingusTex;
-                BurganTexture = BurganTex;
+                OiiaTexture = OiiaTex;
 
                 wallTexture.wrapS = THREE.RepeatWrapping;
                 wallTexture.wrapT = THREE.RepeatWrapping;
@@ -617,9 +617,9 @@ body { margin: 0; overflow: hidden; }
                 Bingus.lookAt(camera.position);
             }
             
-            // Update Burgan
-            if (Burgan) {
-                Burgan.lookAt(camera.position);
+            // Update Oiia
+            if (Oiia) {
+                Oiia.lookAt(camera.position);
             }
             
             // Update decorations
@@ -650,8 +650,8 @@ body { margin: 0; overflow: hidden; }
                 updateSingleNPC(Bingus, delta);
             }
 
-            if (Burgan) {
-                updateSingleNPC(Burgan, delta);
+            if (Oiia) {
+                updateSingleNPC(Oiia, delta);
             }
         }
 
@@ -827,22 +827,22 @@ body { margin: 0; overflow: hidden; }
                     }
                     break;
                 case 'KeyK':
-                    if (BurganTexture) {
-                        const BurganCloneGeometry = new THREE.PlaneGeometry(4, 4);
-                        const BurganCloneMaterial = new THREE.MeshBasicMaterial({
-                            map: BurganTexture,
+                    if (OiiaTexture) {
+                        const OiiaCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const OiiaCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: OiiaTexture,
                             transparent: true,
                             side: THREE.DoubleSide
                         });
-                        const BurganClone = new THREE.Mesh(BurganCloneGeometry, BurganCloneMaterial);
-                        BurganClone.position.copy(camera.position);
-                        BurganClone.direction = new THREE.Vector3(1, 0, 0);
-                        BurganClone.targetRotation = 0;
-                        scene.add(BurganClone);
-                        npcClones.push(BurganClone);
+                        const OiiaClone = new THREE.Mesh(OiiaCloneGeometry, OiiaCloneMaterial);
+                        OiiaClone.position.copy(camera.position);
+                        OiiaClone.direction = new THREE.Vector3(1, 0, 0);
+                        OiiaClone.targetRotation = 0;
+                        scene.add(OiiaClone);
+                        npcClones.push(OiiaClone);
                         const randomAngle = Math.random() * Math.PI * 2;
-                        BurganClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-                        BurganClone.targetRotation = Math.atan2(BurganClone.direction.x, BurganClone.direction.z);
+                        OiiaClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        OiiaClone.targetRotation = Math.atan2(OiiaClone.direction.x, OiiaClone.direction.z);
                     }
                     break;
             }
