@@ -96,6 +96,13 @@
     margin: 20px;
     transition: all 0.2s;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .pull-button.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   body.dark-mode .pull-button {
@@ -268,6 +275,10 @@ function performPull() {
   const gachaBall = document.querySelector('.gacha-ball');
   const display = document.getElementById('number-display');
   const gachaSound = document.getElementById('gacha-sound');
+  const pullButton = document.querySelector('.pull-button');
+  
+  // Hide the button during animation
+  pullButton.classList.add('hidden');
   
   // Reset animations
   display.classList.remove('show');
@@ -297,6 +308,12 @@ function performPull() {
     if (rarity >= 3) {
       createConfetti();
     }
+
+    // Show the button again after animation completes
+    setTimeout(() => {
+      pullButton.classList.remove('hidden');
+    }, 500);
+    
   }, 1000);
 }
 
