@@ -191,6 +191,7 @@
 </style>
 </head>
 <body>
+  <audio id="gacha-sound" src="Magic Chime - Sound Effect for editing-[AudioTrimmer.com]-[AudioTrimmer.com].mp3" preload="auto"></audio>
   <button class="theme-button" onclick="toggleDarkMode()" id="theme-toggle">☀️</button>
   <div class="container">
     <div class="gacha-ball">
@@ -266,6 +267,7 @@ function generateNumber() {
 function performPull() {
   const gachaBall = document.querySelector('.gacha-ball');
   const display = document.getElementById('number-display');
+  const gachaSound = document.getElementById('gacha-sound');
   
   // Reset animations
   display.classList.remove('show');
@@ -281,6 +283,10 @@ function performPull() {
 
   // Show result after ball animation
   setTimeout(() => {
+    // Play sound
+    gachaSound.currentTime = 0;
+    gachaSound.play().catch(err => console.log('Audio playback failed:', err));
+
     display.innerHTML = `
       <div class="rarity-name" style="color: ${rarityColors[rarity]};">You got a ${rarityNames[rarity]}!</div>
       <div style="color: ${rarityColors[rarity]};">${number.toLocaleString()}</div>
