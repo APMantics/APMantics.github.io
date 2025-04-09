@@ -276,9 +276,9 @@ function init() {
     // Load all textures first
     Promise.all([
         new Promise(resolve => textureLoader.load('https://i.ibb.co/MSJRctN/image.png', resolve)), // Updated NPC texture
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/qCwfjS3/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
-        new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/HTKKF8Nf/image.png', resolve)),
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/ZpxV7N9m/image.png', resolve)),
+        new Promise(resolve => textureLoader.load('https://i.ibb.co/FkZj8TBR/image.png', resolve)),
         new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)), // Door texture
         new Promise(resolve => textureLoader.load('https://i.ibb.co/L030VY4/image.png', resolve)) // Chasing texture
     ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, chasingTex]) => {
