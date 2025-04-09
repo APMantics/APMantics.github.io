@@ -474,17 +474,17 @@
             const textureLoader = new THREE.TextureLoader();
             
             Promise.all([
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/MSJRctN/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/qCwfjS3/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/0nNCrZ0/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/GTmTvtf/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/TMFN9X4/image.png', resolve)),
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/JRdPjgCL/image.png', resolve)), // Add Bingus texture
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/vCf0qC3f/image.png', resolve)) // Add Buttdog texture
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/MSJRctN/image.png', resolve)),// Jermbo
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/qCwfjS3/image.png', resolve)),// Wall
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),// Floor
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/pZW91vN/image.png', resolve)),// Roof
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/j8dF4QQ/image.png', resolve)),// Door
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/0nNCrZ0/image.png', resolve)),// Fafa
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/fMQJHMB/image.png', resolve)),// Tree
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/GTmTvtf/image.png', resolve)),// Glorp
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/TMFN9X4/image.png', resolve)),// Glub
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/Z16zmLyL/image.png', resolve)),// should be bingus
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/SwWqHS1R/image.png', resolve)),// should be buttdog
             ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, ButtdogTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
