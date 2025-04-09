@@ -95,8 +95,8 @@
         let Glub;
         let BingusTexture;
         let Bingus;
-        let BurganTexture;
-        let Burgan;
+        let ButtdogTexture;
+        let Buttdog;
         let keySequence = [];
         const konamiCode1 = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
         const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
@@ -167,8 +167,8 @@
             if (Bingus) {
                 updateDirectionForNPC(Bingus);
             }
-            if (Burgan) {
-                updateDirectionForNPC(Burgan);
+            if (Buttdog) {
+                updateDirectionForNPC(Buttdog);
             }
         }
 
@@ -323,27 +323,27 @@
             }
 
             if (Math.random() < 0.025) { // 2.5% chance to spawn
-                const BurganGeometry = new THREE.PlaneGeometry(4, 4);
-                const BurganMaterial = new THREE.MeshBasicMaterial({
-                    map: BurganTexture,
+                const ButtdogGeometry = new THREE.PlaneGeometry(4, 4);
+                const ButtdogMaterial = new THREE.MeshBasicMaterial({
+                    map: ButtdogTexture,
                     transparent: true,
                     side: THREE.DoubleSide
                 });
-                Burgan = new THREE.Mesh(BurganGeometry, BurganMaterial);
+                Buttdog = new THREE.Mesh(ButtdogGeometry, ButtdogMaterial);
                 const randomCell = findRandomEmptyCell();
-                Burgan.position.set(
+                Buttdog.position.set(
                     randomCell.x * CELL_SIZE + CELL_SIZE/2,
                     2,
                     randomCell.y * CELL_SIZE + CELL_SIZE/2
                 );
-                Burgan.direction = new THREE.Vector3(1, 0, 0);
-                Burgan.targetRotation = 0;
-                scene.add(Burgan);
+                Buttdog.direction = new THREE.Vector3(1, 0, 0);
+                Buttdog.targetRotation = 0;
+                scene.add(Buttdog);
                 updateNPCDirection();
             } else {
-                if (Burgan) {
-                    scene.remove(Burgan);
-                    Burgan = null;
+                if (Buttdog) {
+                    scene.remove(Buttdog);
+                    Buttdog = null;
                 }
             }
 
@@ -484,8 +484,8 @@
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/GTmTvtf/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/TMFN9X4/image.png', resolve)),
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/JRdPjgCL/image.png', resolve)), // Add Bingus texture
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/vCf0qC3f/image.png', resolve)) // Add Burgan texture
-            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, BurganTex]) => {
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/vCf0qC3f/image.png', resolve)) // Add Buttdog texture
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, ButtdogTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
                 floorTexture = floorTex;
@@ -495,7 +495,7 @@
                 GlorpTexture = GlorpTex;
                 GlubTexture = GlubTex;
                 BingusTexture = BingusTex;
-                BurganTexture = BurganTex;
+                ButtdogTexture = ButtdogTex;
 
                 wallTexture.wrapS = THREE.RepeatWrapping;
                 wallTexture.wrapT = THREE.RepeatWrapping;
@@ -617,9 +617,9 @@
                 Bingus.lookAt(camera.position);
             }
             
-            // Update Burgan
-            if (Burgan) {
-                Burgan.lookAt(camera.position);
+            // Update Buttdog
+            if (Buttdog) {
+                Buttdog.lookAt(camera.position);
             }
             
             // Update decorations
@@ -650,8 +650,8 @@
                 updateSingleNPC(Bingus, delta);
             }
 
-            if (Burgan) {
-                updateSingleNPC(Burgan, delta);
+            if (Buttdog) {
+                updateSingleNPC(Buttdog, delta);
             }
         }
 
@@ -824,22 +824,22 @@
                     }
                     break;
                 case 'KeyK':
-                    if (BurganTexture) {
-                        const BurganCloneGeometry = new THREE.PlaneGeometry(4, 4);
-                        const BurganCloneMaterial = new THREE.MeshBasicMaterial({
-                            map: BurganTexture,
+                    if (ButtdogTexture) {
+                        const ButtdogCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const ButtdogCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: ButtdogTexture,
                             transparent: true,
                             side: THREE.DoubleSide
                         });
-                        const BurganClone = new THREE.Mesh(BurganCloneGeometry, BurganCloneMaterial);
-                        BurganClone.position.copy(camera.position);
-                        BurganClone.direction = new THREE.Vector3(1, 0, 0);
-                        BurganClone.targetRotation = 0;
-                        scene.add(BurganClone);
-                        npcClones.push(BurganClone);
+                        const ButtdogClone = new THREE.Mesh(ButtdogCloneGeometry, ButtdogCloneMaterial);
+                        ButtdogClone.position.copy(camera.position);
+                        ButtdogClone.direction = new THREE.Vector3(1, 0, 0);
+                        ButtdogClone.targetRotation = 0;
+                        scene.add(ButtdogClone);
+                        npcClones.push(ButtdogClone);
                         const randomAngle = Math.random() * Math.PI * 2;
-                        BurganClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
-                        BurganClone.targetRotation = Math.atan2(BurganClone.direction.x, BurganClone.direction.z);
+                        ButtdogClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        ButtdogClone.targetRotation = Math.atan2(ButtdogClone.direction.x, ButtdogClone.direction.z);
                     }
                     break;
             }
