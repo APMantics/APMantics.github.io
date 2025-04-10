@@ -102,7 +102,7 @@
         const konamiCode2 = ['KeyW', 'KeyW', 'KeyS', 'KeyS', 'KeyA', 'KeyD', 'KeyA', 'KeyD'];
 
         const MAZE_SIZE = 25;
-        const WALL_HEIGHT = 5;
+        const WALL_HEIGHT = 0;
         const CELL_SIZE = 10;
         const TURN_SPEED = 2;
         const WALK_SPEED = 8;
@@ -156,7 +156,7 @@
                 npcObj.targetRotation = Math.atan2(npcObj.direction.x, npcObj.direction.z);
             };
             
-            updateDirectionForNPC(npc);
+            updateDirectionForNPC(npc); //maybe add one more section for NPC
             npcClones.forEach(updateDirectionForNPC);
             if (Glorp) {
                 updateDirectionForNPC(Glorp);
@@ -347,6 +347,31 @@
                 }
             }
 
+            if (Math.random() < 0.100) { // 2.5% chance to spawn
+                const TestingGeometry = new THREE.PlaneGeometry(4, 4);
+                const TestingMaterial = new THREE.MeshBasicMaterial({
+                    map: TestingTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                Testing = new THREE.Mesh(TestingGeometry, TestingMaterial);
+                const randomCell = findRandomEmptyCell();
+                Testing.position.set(
+                    randomCell.x * CELL_SIZE + CELL_SIZE/2,
+                    2,
+                    randomCell.y * CELL_SIZE + CELL_SIZE/2
+                );
+                Testing.direction = new THREE.Vector3(1, 0, 0);
+                Testing.targetRotation = 0;
+                scene.add(Testing);
+                updateNPCDirection();
+            } else {
+                if (Testing) {
+                    scene.remove(Testing);
+                    Testing = null;
+                }
+            }
+// from (if) to (null;) copy and paste to random spawn an npc change info
             createDecorations();
         }
 
@@ -473,7 +498,7 @@
 
             const textureLoader = new THREE.TextureLoader();
             
-            Promise.all([
+            Promise.all([ //add textures here 
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/MSJRctN/image.png', resolve)),// Jermbo
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/qCwfjS3/image.png', resolve)),// Wall
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/9W6xgqv/image.png', resolve)),// Floor
@@ -484,8 +509,9 @@
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/GTmTvtf/image.png', resolve)),// Glorp
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/TMFN9X4/image.png', resolve)),// Glub
                 new Promise(resolve => textureLoader.load('https://i.ibb.co/Z16zmLyL/image.png', resolve)),// Bingus
-                new Promise(resolve => textureLoader.load('https://i.ibb.co/XxP6rbKw/image.png', resolve)),// Buttdawg 
-            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, ButtdogTex]) => {
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/XxP6rbKw/image.png', resolve)),// Buttdawg
+                new Promise(resolve => textureLoader.load('https://i.ibb.co/wFJ15TG9/image.png', resolve)),// Testing
+            ]).then(([npcTex, wallTex, floorTex, ceilingTex, doorTex, FafaTex, decorTex, GlorpTex, GlubTex, BingusTex, ButtdogTex, TestTex]) => {
                 npcTexture = npcTex;
                 wallTexture = wallTex;
                 floorTexture = floorTex;
@@ -496,6 +522,7 @@
                 GlubTexture = GlubTex;
                 BingusTexture = BingusTex;
                 ButtdogTexture = ButtdogTex;
+                TestingTexture = TestTex;
 
                 wallTexture.wrapS = THREE.RepeatWrapping;
                 wallTexture.wrapT = THREE.RepeatWrapping;
