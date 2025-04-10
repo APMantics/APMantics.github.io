@@ -648,6 +648,10 @@
             if (Buttdog) {
                 Buttdog.lookAt(camera.position);
             }
+
+            if (Testing) {
+                Testing.lookAt(camera.position);
+            }
             
             // Update decorations
             decorations.forEach(decoration => {
@@ -679,6 +683,10 @@
 
             if (Buttdog) {
                 updateSingleNPC(Buttdog, delta);
+            }
+
+            if (Testing) {
+                updateSIngleNPC(Testing, delta);
             }
         }
 
@@ -867,6 +875,25 @@
                         const randomAngle = Math.random() * Math.PI * 2;
                         ButtdogClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
                         ButtdogClone.targetRotation = Math.atan2(ButtdogClone.direction.x, ButtdogClone.direction.z);
+                    }
+                    break;
+                    case 'KeyF':
+                    if (TestingTexture) {
+                        const TestingCloneGeometry = new THREE.PlaneGeometry(4, 4);
+                        const TestingCloneMaterial = new THREE.MeshBasicMaterial({
+                            map: TestingTexture,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                        const TestingClone = new THREE.Mesh(TestingCloneGeometry, TestingCloneMaterial);
+                        TestingClone.position.copy(camera.position);
+                        TestingClone.direction = new THREE.Vector3(1, 0, 0);
+                        TestingClone.targetRotation = 0;
+                        scene.add(TestingClone);
+                        npcClones.push(TestingClone);
+                        const randomAngle = Math.random() * Math.PI * 2;
+                        TestingClone.direction.set(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+                        TestingClone.targetRotation = Math.atan2(TestingClone.direction.x, TestingClone.direction.z);
                     }
                     break;
             }
